@@ -1,0 +1,4 @@
+/* The styling file. We will be importing tailwindcss.com styles here, so we can use it across the application. We can also add our custom CSS classes here. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
