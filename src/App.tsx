@@ -69,9 +69,9 @@ async function getMarkerAQI(stationUID: string) {
   return (
     await fetch(
       "https://api.waqi.info/feed/@" +
-      stationUID +
-      "/?token=" +
-      WORLD_AIR_QUALITY_API_TOKEN,
+        stationUID +
+        "/?token=" +
+        WORLD_AIR_QUALITY_API_TOKEN,
     )
   ).json();
 }
@@ -274,7 +274,7 @@ type TSelectedStation = {
  * This is a React Component to write our application code.
  */
 function App() {
-  // Local states 
+  // Local states
 
   const [map, setMap] = useState<Map | null>(null);
   const [selectedStationInfo, setSelectedStationInfo] =
@@ -335,24 +335,28 @@ function App() {
   useEffect(() => {
     // Use the user location as the default air quality information when the application loads
     const getUserCurrentLocationAQI = async () => {
-      const data = await (await fetch(`https://api.waqi.info/feed/here/?token=${WORLD_AIR_QUALITY_API_TOKEN}`)).json()
-      setSelectedStationInfo(data.data)
-    }
-    getUserCurrentLocationAQI()
+      const data = await (
+        await fetch(
+          `https://api.waqi.info/feed/here/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+        )
+      ).json();
+      setSelectedStationInfo(data.data);
+    };
+    getUserCurrentLocationAQI();
   }, []);
 
   // set the first available forecast data as the default selected
   useEffect(() => {
-    if (!selectedStationInfo?.forecast) return
-    if (activePollutant !== '') return
+    if (!selectedStationInfo?.forecast) return;
+    if (activePollutant !== "") return;
     if (selectedStationInfo.forecast.daily.no2) {
-      setActivePollutant('no2')
+      setActivePollutant("no2");
     } else if (selectedStationInfo.forecast.daily.pm10) {
-      setActivePollutant('pm10')
+      setActivePollutant("pm10");
     } else if (selectedStationInfo.forecast.daily.pm25) {
-      setActivePollutant('pm25')
+      setActivePollutant("pm25");
     } else if (selectedStationInfo.forecast.daily.o3) {
-      setActivePollutant('o3')
+      setActivePollutant("o3");
     }
   }, [selectedStationInfo?.forecast, activePollutant]);
 
@@ -381,7 +385,6 @@ function App() {
             <span className="font-semibold">{selectedStationInfo?.aqi}</span>
           </p>
           <p className="text-base">{message}</p>
-
         </div>
         {/* Metrics */}
         <div className="p-4 flex flex-col gap-y-4 bg-black">
@@ -555,12 +558,18 @@ function App() {
 // Exporting it, so it can be imported and rendered in the 'main.tsx' file.
 export default App;
 
-
-
 /**
  * This is a custom Tooltip Component for the chart.
  */
-const CustomTooltip = ({ active, payload, label }: { active: boolean, payload: Record<string, string>[], label: string }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active: boolean;
+  payload: Record<string, string>[];
+  label: string;
+}) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white p-4 rounded-lg shadow-lg">

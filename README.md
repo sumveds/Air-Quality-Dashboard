@@ -70,5 +70,4 @@ pnpm add axios
 
 # Install maplibre gl
 
-
 # Install rechart for chart visualization.
