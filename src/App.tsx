@@ -69,9 +69,9 @@ async function getMarkerAQI(stationUID: string) {
   return (
     await fetch(
       "https://api.waqi.info/feed/@" +
-        stationUID +
-        "/?token=" +
-        WORLD_AIR_QUALITY_API_TOKEN,
+      stationUID +
+      "/?token=" +
+      WORLD_AIR_QUALITY_API_TOKEN,
     )
   ).json();
 }
@@ -372,7 +372,7 @@ function App() {
     );
 
     return (
-      <div className="col-span-2 space-y-1.5 h-[95dvh] overflow-scroll bg-[#383841]">
+      <div className="col-span-3 space-y-1.5 h-[95dvh] overflow-scroll bg-[#383841]">
         <div
           className={`text-black p-6 flex flex-col gap-y-3 ${backgroundColors[color]}`}
         >
@@ -549,7 +549,7 @@ function App() {
         {/* This is the sidebar where the information about the air quality is presented.*/}
         {renderSidePanel}
         {/* This is the html div element containing the map. */}
-        <div id="map" className="col-span-7 w-full h-[95dvh]"></div>
+        <div id="map" className="col-span-6 w-full h-[95dvh]"></div>
       </div>
     </main>
   );
