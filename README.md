@@ -1,73 +1,65 @@
-# use the other workshop directory to document and refer to it from here. Also refer to it from there.
+## Simple Air Quality Dashboard
 
-# Decide on values to show/present
+This goal of this repo is to guide the workshop participants through setting up a simple air quality dashboard using React, TypeScript, Tailwind CSS, MapLibre, and Recharts. Participants will display real-time air quality data and visualize pollutants such as PM2.5, PM10, Ozone, and NO2.
 
-# Find the right data source
+### Features
 
-# Decide on visualization analysis to present
+- Real-time air quality information from API
+- Forecast charts for air quality trends
+- Visualizes pollutants: PM2.5, PM10, Ozone, and NO2
+- Map clustering for data visualization
 
-- use black theme for map.
 
-# Documentation
+### Prerequisites
 
-# Document how to setup already developed code - Share already developed code with participants using scan code and then walk them through it.
+Before starting the workshop, ensure the following tools are installed:
 
-# pre-requisite - they need to install node js
+- Node.js (LTS version recommended) Download [here](https://nodejs.org/en)
+- Vite (for fast development) and pnpm (for efficient package management)
+- Install [Vite](https://vite.dev/)
+- Install [pnpm](https://pnpm.io/)
+- VSCode (for code autocompletion and Tailwind CSS support)
+- GitHub account (to manage your repository)
+- [Vercel](https://vercel.com/) account (for deploying the dashboard)
 
-# then install vite and pnpm
+### Installation
+Follow the steps below to set up and run the project locally:
 
-# Use VSCode for development for autocomplete and tailwind support
+- Step 1: Clone the repo or download as a zip file.
 
-# Vercel account to deploy
+If you're experience with git, you can clone the repo using the code below. Otherwise, download as a zipped file and open in VSCode.
 
-# GitHub account to push code.
+```bash
+git clone https://github.com/jeafreezy/aq-dashboard.git
+```
 
-# create a new project
+- Step 2: Install Project Dependencies
 
-# Step 1
+After creating the project, install the required dependencies:
 
-##pnpm create vite . --template react-ts
-
-# Step 2
-
-Install dependencies
-
+```bash
 pnpm install
+```
 
-# Step 3
+- Step 3: Start the Development Server
 
-Start the dev server
+To run the project locally and start development:
 
+```bash
 pnpm dev
+```
 
-# Step 4 - Clean up the codebase
+This will launch a local development server. Open the displayed URL in your browser to view the dashboard.
 
-# Step 5 - Setup tailwind
+### Data Source
 
-https://tailwindcss.com/
+The Air Quality data is coming from World Air Quality Index.
+Get your API token from: [https://aqicn.org/api/](https://aqicn.org/api/).
 
-pnpm add -D tailwindcss postcss autoprefixer
+### Deployment
 
-# create init file
+To deploy your air quality dashboard:
 
-npx tailwindcss init -p
-
-# edit file to include files tailwind should check
-
-# specify only the files we need. i.e tsx files.
-
-#add tailwind directives to index.css
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-# API call use axios
-
-https://axios-http.com/docs/intro
-
-pnpm add axios
-
-# Install maplibre gl
-
-# Install rechart for chart visualization.
+- Push your code to GitHub.
+- Link your repository to Vercel for easy continuous deployment for free.
+- Vercel will automatically build and deploy your project whenever you push updates to the GitHub repository.
