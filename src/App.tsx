@@ -94,6 +94,7 @@ async function getMarkerAQI(stationUID: string) {
 async function populateMarkers(
   map: maplibregl.Map,
   setSelectedStationInfo: (station: TSelectedStation) => void,
+  isDarkMode: boolean,
 ) {
   const mapBounds = map.getBounds();
 
@@ -115,27 +116,23 @@ async function populateMarkers(
       if (stations.status !== "ok") throw stations.data;
 
       const geoJSON = stationsToGeoJSON(stations.data);
-      console.log("Generated GeoJSON with avg_aqi:", geoJSON);
 
       if (map.getSource("stations")) {
-        // Update the existing source with new data
         const source = map.getSource("stations") as maplibregl.GeoJSONSource;
         source.setData(geoJSON);
       } else {
-        // Add a new source with clustering and avg_aqi calculation
         map.addSource("stations", {
           type: "geojson",
           data: geoJSON,
           cluster: true,
-          clusterMaxZoom: 14, // Max zoom level to cluster points
-          clusterRadius: 50, // Radius of each cluster
+          clusterMaxZoom: 14,
+          clusterRadius: 50,
           clusterProperties: {
-            avg_aqi: ["+", ["get", "aqi"]], // Calculate average AQI
+            avg_aqi: ["+", ["get", "aqi"]],
           },
         });
 
-        // Add cluster layer
-        // Calculate the average AQI for stations in a cluster and color the cluster bubbles.
+        // Add cluster layer with updated colors
         map.addLayer({
           id: "clusters",
           type: "circle",
@@ -144,30 +141,30 @@ async function populateMarkers(
           paint: {
             "circle-color": [
               "step",
-              ["get", "avg_aqi"], // Use avg_aqi in properties
-              "#00FF00", // Good (0-50) - Bright Green
+              ["get", "avg_aqi"],
+              isDarkMode ? "#00FF00" : "#32CD32", // Good: Bright green
               50,
-              "#FFD700", // Moderate (51-100) - Gold
+              isDarkMode ? "#FFD700" : "#FFC107", // Moderate: Sharper yellow
               100,
-              "#FF8C00", // Unhealthy for Sensitive Groups (101-150) - Dark Orange
+              isDarkMode ? "#FF8C00" : "#FF5722", // Unhealthy for Sensitive Groups
               150,
-              "#FF4500", // Unhealthy (151-200) - Orange Red
+              isDarkMode ? "#FF4500" : "#E53935", // Unhealthy
               200,
-              "#DC143C", // Very Unhealthy (201-300) - Crimson
+              isDarkMode ? "#DC143C" : "#C62828", // Very Unhealthy
               300,
-              "#FF0000", // Hazardous (300+) - Bright Red
+              isDarkMode ? "#FF0000" : "#B71C1C", // Hazardous
             ],
             "circle-radius": [
               "step",
               ["get", "point_count"],
-              20, // Size for small clusters
+              20,
               100,
               30,
               750,
               40,
             ],
             "circle-stroke-width": 2,
-            "circle-stroke-color": "#FFFFFF", // White stroke to ensure contrast
+            "circle-stroke-color": "#FFFFFF",
           },
         });
 
@@ -181,17 +178,17 @@ async function populateMarkers(
             "circle-color": [
               "step",
               ["get", "aqi"],
-              "#9BD74E", // Good
+              isDarkMode ? "#9BD74E" : "#32CD32", // Adjusted for theme
               50,
-              "#f1f075", // Moderate
+              isDarkMode ? "#FFD700" : "#FFC107", // Adjusted for theme
               100,
-              "#f28cb1", // Unhealthy for Sensitive Groups
+              isDarkMode ? "#FF8C00" : "#FF5722", // Adjusted for theme
               150,
-              "#e55e5e", // Unhealthy
+              isDarkMode ? "#FF4500" : "#E53935", // Adjusted for theme
               200,
-              "#d4201f", // Very Unhealthy
+              isDarkMode ? "#DC143C" : "#C62828", // Adjusted for theme
               300,
-              "#8b0000", // Hazardous
+              isDarkMode ? "#FF0000" : "#B71C1C", // Adjusted for theme
             ],
             "circle-radius": 10,
             "circle-stroke-width": 3,
@@ -199,19 +196,38 @@ async function populateMarkers(
           },
         });
 
+        // Add hover effect to change the cursor to a pointer
+        map.on("mouseenter", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        // Revert the cursor back to default when not hovering
+        map.on("mouseleave", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "";
+        });
+
         // Add click event listener for unclustered-point
         map.on("click", "unclustered-point", async (e: any) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
           const { stationName, uid } = e.features[0].properties;
 
+          // Add a popup at the clicked location
           new maplibregl.Popup()
             .setLngLat(coordinates)
-            .setHTML(`<strong style='color:black;'>${stationName}</strong>`)
+            .setHTML(`<strong style="color:black;">${stationName}</strong>`)
             .addTo(map);
 
           // Fetch detailed information for the selected station
-          const stationInfo = await getMarkerAQI(uid);
-          setSelectedStationInfo(stationInfo?.data); // Update the selected station info state
+          try {
+            const stationInfo = await getMarkerAQI(uid); // Fetch station data
+            if (stationInfo && stationInfo.data) {
+              setSelectedStationInfo(stationInfo.data); // Update the side panel state
+            } else {
+              console.error("Failed to fetch station information");
+            }
+          } catch (error) {
+            console.error("Error fetching station data:", error);
+          }
         });
       }
     })
@@ -297,87 +313,80 @@ function App() {
   const [selectedStationInfo, setSelectedStationInfo] =
     useState<null | TSelectedStation>(null);
   const [activePollutant, setActivePollutant] = useState<string>("");
+  const [userCoordinates, setUserCoordinates] = useState<
+    [number, number] | null
+  >(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const toggleTheme = () => {
+    setIsDarkMode((prevMode) => !prevMode);
+  };
   // This useEffect is used to load the map
   useEffect(() => {
     if (map) return;
 
-    // Fetch user's geolocation
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        setUserCoordinates([longitude, latitude]);
 
-        // Initialize the map with user's location
         const newMap = new maplibregl.Map({
           container: "map",
           style:
             "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-          center: [longitude, latitude], // Center on user's location
-          zoom: 10, // Adjust zoom for city-level view
+          center: [longitude, latitude],
+          zoom: 10,
         });
 
         newMap.addControl(new NavigationControl());
         newMap.addControl(
           new GeolocateControl({
-            positionOptions: {
-              enableHighAccuracy: true,
-            },
+            positionOptions: { enableHighAccuracy: true },
             trackUserLocation: true,
           }),
         );
 
-        // Add a marker for the user's current location
-        new maplibregl.Marker({ color: "green" }) // Customize the pin color
-          .setLngLat([longitude, latitude]) // Set to user's location
+        new maplibregl.Marker({ color: "green" })
+          .setLngLat([longitude, latitude])
           .addTo(newMap);
 
         setMap(newMap);
       },
       (error) => {
         console.error("Geolocation error:", error);
-
-        // Fallback to a default location (e.g., Bangalore)
-        const fallbackLocation = { latitude: 12.9716, longitude: 77.5946 };
-        const newMap = new maplibregl.Map({
-          container: "map",
-          style:
-            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-          center: [fallbackLocation.longitude, fallbackLocation.latitude],
-          zoom: 0,
-        });
-
-        newMap.addControl(new NavigationControl());
-        newMap.addControl(
-          new GeolocateControl({
-            positionOptions: {
-              enableHighAccuracy: true,
-            },
-            trackUserLocation: true,
-          }),
-        );
-
-        // Add a marker for the fallback location
-        new maplibregl.Marker({ color: "red" }) // Customize the pin color
-          .setLngLat([fallbackLocation.longitude, fallbackLocation.latitude])
-          .addTo(newMap);
-
-        setMap(newMap);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
       },
     );
   }, [map]);
 
   useEffect(() => {
+    if (!map || !userCoordinates) return;
+
+    const styleUrl = isDarkMode
+      ? "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+      : "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+    map.setStyle(styleUrl);
+
+    map.on("styledata", async () => {
+      // Re-add the green location marker
+      new maplibregl.Marker({ color: "green" })
+        .setLngLat(userCoordinates)
+        .addTo(map);
+
+      // Re-add clustering and markers
+      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+    });
+  }, [isDarkMode, map, userCoordinates]);
+
+  useEffect(() => {
     if (!map) return;
 
     map.on("load", async () => {
-      await populateMarkers(map, setSelectedStationInfo);
+      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
     });
 
     map.on("moveend", async () => {
-      await populateMarkers(map, setSelectedStationInfo);
+      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
     });
   }, [map]);
 
@@ -437,9 +446,13 @@ function App() {
     );
 
     return (
-      <div className="col-span-3 space-y-1.5 h-[95dvh] overflow-scroll bg-[#383841]">
+      <div
+        className={`col-span-3 space-y-1.5 h-[95dvh] overflow-scroll transition-colors duration-300 ${
+          isDarkMode ? "bg-[#383841] text-white" : "bg-gray-100 text-black"
+        }`}
+      >
         <div
-          className={`text-black p-6 flex flex-col gap-y-3 ${backgroundColors[color]}`}
+          className={`p-6 flex flex-col gap-y-3 ${backgroundColors[color]} text-black`}
         >
           <a href={selectedStationInfo?.city.url} target="_blank">
             <p className="text-base">{selectedStationInfo?.city.name}</p>
@@ -452,48 +465,66 @@ function App() {
           <p className="text-base">{message}</p>
         </div>
         {/* Metrics */}
-        <div className="p-4 flex flex-col gap-y-4 bg-black">
+        <div
+          className={`p-4 flex flex-col gap-y-4 transition-colors duration-300 ${
+            isDarkMode ? "bg-black text-white" : "bg-white text-black"
+          }`}
+        >
           <small>Last updated: {selectedStationInfo?.time.s}</small>
           <p className="text-base">Main Pollutants</p>
           <ul className="flex items-center justify-between gap-x-1">
             {/* PM 2.5 */}
             {selectedStationInfo?.iaqi.pm25 && (
               <li className="flex flex-col gap-y-2 items-center">
-                <span className="text-base bg-[#383841] px-4 py-1  rounded-2xl">
+                <span
+                  className={`text-base px-4 py-1 rounded-2xl ${
+                    isDarkMode ? "bg-[#383841]" : "bg-gray-200"
+                  }`}
+                >
                   {selectedStationInfo?.iaqi.pm25.v}
                 </span>
-                <span className="text-xs font-light text-[#9D9DA1]">
+                <span className="text-xs font-light text-[#1A1A1D]">
                   PM 2.5
                 </span>
               </li>
             )}
-
             {/* PM 10 */}
             {selectedStationInfo?.iaqi.pm10 && (
               <li className="flex flex-col gap-y-2 items-center">
-                <span className="text-base bg-[#383841] px-4 py-1  rounded-2xl">
+                <span
+                  className={`text-base px-4 py-1 rounded-2xl ${
+                    isDarkMode ? "bg-[#383841]" : "bg-gray-200"
+                  }`}
+                >
                   {selectedStationInfo?.iaqi.pm10.v}
                 </span>
-                <span className="text-xs font-light text-[#9D9DA1]">PM 10</span>
+                <span className="text-xs font-light text-[#1A1A1D]">PM 10</span>
               </li>
             )}
-
             {/* NO2 */}
             {selectedStationInfo?.iaqi.no2 && (
               <li className="flex flex-col gap-y-2 items-center">
-                <span className="text-base bg-[#383841] px-4 py-1  rounded-2xl">
+                <span
+                  className={`text-base px-4 py-1 rounded-2xl ${
+                    isDarkMode ? "bg-[#383841]" : "bg-gray-200"
+                  }`}
+                >
                   {selectedStationInfo?.iaqi.no2.v}
                 </span>
-                <span className="text-xs font-light text-[#9D9DA1]">NO2</span>
+                <span className="text-xs font-light text-[#1A1A1D]">NO2</span>
               </li>
             )}
             {/* OZONE */}
             {selectedStationInfo?.iaqi.o3 && (
               <li className="flex flex-col gap-y-2 items-center">
-                <span className="text-base bg-[#383841] px-4 py-1  rounded-2xl">
+                <span
+                  className={`text-base px-4 py-1 rounded-2xl ${
+                    isDarkMode ? "bg-[#383841]" : "bg-gray-200"
+                  }`}
+                >
                   {selectedStationInfo?.iaqi.o3.v}
                 </span>
-                <span className="text-xs font-light text-[#9D9DA1]">Ozone</span>
+                <span className="text-xs font-light text-[#1A1A1D]">Ozone</span>
               </li>
             )}
           </ul>
@@ -501,34 +532,51 @@ function App() {
 
         {/* Forecast Chart */}
         {selectedStationInfo?.forecast?.daily ? (
-          <div className="p-4 flex flex-col gap-y-4 bg-black">
+          <div
+            className={`p-4 flex flex-col gap-y-4 transition-colors duration-300 ${
+              isDarkMode ? "bg-black text-white" : "bg-white text-black"
+            }`}
+          >
             <p className="text-base">Air Quality Forecast</p>
             {/* Tabs */}
-            <ul className="flex items-center px-2 py-1 rounded-3xl justify-between gap-x-1 bg-[#383841] text-[#9D9DA1]">
+            <ul
+              className={`flex items-center px-2 py-1 rounded-3xl justify-between gap-x-1 transition-colors duration-300 ${
+                isDarkMode
+                  ? "bg-[#383841] text-[#9D9DA1]"
+                  : "bg-gray-200 text-black"
+              }`}
+            >
               {/* PM 2.5 */}
               {selectedStationInfo.forecast.daily.pm25 && (
                 <li
-                  className={`cursor-pointer p-2  text-sm ${activePollutant === "pm25" && "bg-black text-white  rounded-3xl"}`}
+                  className={`cursor-pointer p-2 text-sm ${
+                    activePollutant === "pm25" &&
+                    "bg-black text-white rounded-3xl"
+                  }`}
                   onClick={() => setActivePollutant("pm25")}
                 >
                   PM 2.5
                 </li>
               )}
-
               {/* PM 10 */}
               {selectedStationInfo.forecast.daily.pm10 && (
                 <li
-                  className={`cursor-pointer p-2 text-sm ${activePollutant === "pm10" && "bg-black text-white cursor-pointer rounded-3xl"}`}
+                  className={`cursor-pointer p-2 text-sm ${
+                    activePollutant === "pm10" &&
+                    "bg-black text-white rounded-3xl"
+                  }`}
                   onClick={() => setActivePollutant("pm10")}
                 >
                   PM10
                 </li>
               )}
-
               {/* NO2 */}
               {selectedStationInfo.forecast.daily.no2 && (
                 <li
-                  className={`cursor-pointer p-2 text-sm ${activePollutant === "no2" && "bg-black text-white cursor-pointer rounded-3xl"}`}
+                  className={`cursor-pointer p-2 text-sm ${
+                    activePollutant === "no2" &&
+                    "bg-black text-white rounded-3xl"
+                  }`}
                   onClick={() => setActivePollutant("no2")}
                 >
                   NO2
@@ -537,7 +585,10 @@ function App() {
               {/* OZONE */}
               {selectedStationInfo.forecast.daily.o3 && (
                 <li
-                  className={`cursor-pointer p-2 text-sm ${activePollutant === "o3" && "bg-black text-white cursor-pointer rounded-3xl"}`}
+                  className={`cursor-pointer p-2 text-sm ${
+                    activePollutant === "o3" &&
+                    "bg-black text-white rounded-3xl"
+                  }`}
                   onClick={() => setActivePollutant("o3")}
                 >
                   Ozone
@@ -556,17 +607,17 @@ function App() {
                     <CartesianGrid strokeDasharray="1 1" />
                     <XAxis
                       dataKey="day"
-                      stroke="#fff"
-                      tick={{ fill: "#fff" }}
-                      tickLine={{ stroke: "#fff" }}
-                      axisLine={{ stroke: "#fff" }}
+                      stroke={isDarkMode ? "#fff" : "#000"}
+                      tick={{ fill: isDarkMode ? "#fff" : "#000" }}
+                      tickLine={{ stroke: isDarkMode ? "#fff" : "#000" }}
+                      axisLine={{ stroke: isDarkMode ? "#fff" : "#000" }}
                       dy={10}
                     />
                     <YAxis
-                      stroke="#fff"
-                      tick={{ fill: "#fff" }}
-                      tickLine={{ stroke: "#fff" }}
-                      axisLine={{ stroke: "#fff" }}
+                      stroke={isDarkMode ? "#fff" : "#000"}
+                      tick={{ fill: isDarkMode ? "#fff" : "#000" }}
+                      tickLine={{ stroke: isDarkMode ? "#fff" : "#000" }}
+                      axisLine={{ stroke: isDarkMode ? "#fff" : "#000" }}
                       dx={-10}
                     />
                     {/* @ts-expect-error bad type definition */}
@@ -579,7 +630,7 @@ function App() {
                 </ResponsiveContainer>
               ) : null}
             </div>
-            {/*  Attributions  */}
+            {/* Attributions */}
             <small className="text-xs">Attributions:</small>
             <ul className="text-xs">
               {selectedStationInfo?.attributions.map((attribution, id) => (
@@ -603,12 +654,26 @@ function App() {
         ) : null}
       </div>
     );
-  }, [selectedStationInfo, activePollutant]);
+  }, [selectedStationInfo, activePollutant, isDarkMode]);
 
   return (
-    <main className="bg-black text-white">
-      <header className="h-14 flex items-center px-6 ">
+    <main
+      className={`transition-colors duration-300 ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}
+    >
+      <header
+        className={`h-14 flex items-center justify-between px-6 ${
+          isDarkMode ? "bg-black text-white" : "bg-white text-black"
+        }`}
+      >
         <p>Global Real-Time Air Quality Monitoring Dashboard</p>
+        <button
+          onClick={toggleTheme}
+          className={`px-4 py-2 rounded-md ${
+            isDarkMode ? "bg-gray-700 text-white" : "bg-gray-300 text-black"
+          } hover:opacity-90 transition`}
+        >
+          {isDarkMode ? "Light Mode" : "Dark Mode"}
+        </button>
       </header>
       <div className="w-full h-screen grid grid-cols-9">
         {/* This is the sidebar where the information about the air quality is presented.*/}
