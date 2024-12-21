@@ -44,20 +44,28 @@ type TStation = {
  * @param stations The stations to convert to GeoJSON.
  */
 function stationsToGeoJSON(stations: TStation[]): GeoJSON.FeatureCollection {
+  // Calculate avg_aqi for all stations
+  const avg_aqi =
+    stations.reduce((sum, station) => sum + Number(station.aqi), 0) /
+    stations.length;
+
+  const features: GeoJSON.Feature[] = stations.map((station: TStation) => ({
+    type: "Feature", // Explicitly "Feature"
+    properties: {
+      stationName: station.station.name,
+      uid: station.uid,
+      aqi: Number(station.aqi),
+      avg_aqi, // Embed avg_aqi here
+    },
+    geometry: {
+      type: "Point", // Explicitly "Point"
+      coordinates: [station.lon, station.lat],
+    },
+  }));
+
   return {
-    type: "FeatureCollection",
-    features: stations.map((station: TStation) => ({
-      type: "Feature",
-      properties: {
-        stationName: station.station.name,
-        uid: station.uid,
-        aqi: Number(station.aqi),
-      },
-      geometry: {
-        type: "Point",
-        coordinates: [station.lon, station.lat],
-      },
-    })),
+    type: "FeatureCollection", // Explicitly "FeatureCollection"
+    features,
   };
 }
 
@@ -69,9 +77,9 @@ async function getMarkerAQI(stationUID: string) {
   return (
     await fetch(
       "https://api.waqi.info/feed/@" +
-      stationUID +
-      "/?token=" +
-      WORLD_AIR_QUALITY_API_TOKEN,
+        stationUID +
+        "/?token=" +
+        WORLD_AIR_QUALITY_API_TOKEN,
     )
   ).json();
 }
@@ -85,60 +93,85 @@ async function getMarkerAQI(stationUID: string) {
 
 async function populateMarkers(
   map: maplibregl.Map,
-  bounds: string,
   setSelectedStationInfo: (station: TSelectedStation) => void,
 ) {
-  return fetch(
-    `${WORLD_AIR_QUALITY_BASE_API_URL}map/bounds/?latlng=${bounds}&token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+  const mapBounds = map.getBounds();
+
+  const zoomLevel = map.getZoom();
+  const factor = zoomLevel < 10 ? 1 : 0.1;
+
+  const extendedBounds = [
+    mapBounds.getNorth() + factor,
+    mapBounds.getWest() - factor,
+    mapBounds.getSouth() - factor,
+    mapBounds.getEast() + factor,
+  ].join(",");
+
+  await fetch(
+    `${WORLD_AIR_QUALITY_BASE_API_URL}map/bounds/?latlng=${extendedBounds}&token=${WORLD_AIR_QUALITY_API_TOKEN}`,
   )
     .then((data) => data.json())
     .then((stations) => {
-      if (stations.status != "ok") throw stations.data;
+      if (stations.status !== "ok") throw stations.data;
 
       const geoJSON = stationsToGeoJSON(stations.data);
+      console.log("Generated GeoJSON with avg_aqi:", geoJSON);
 
       if (map.getSource("stations")) {
+        // Update the existing source with new data
         const source = map.getSource("stations") as maplibregl.GeoJSONSource;
         source.setData(geoJSON);
       } else {
+        // Add a new source with clustering and avg_aqi calculation
         map.addSource("stations", {
           type: "geojson",
           data: geoJSON,
           cluster: true,
-          clusterMaxZoom: 14,
-          clusterRadius: 50,
+          clusterMaxZoom: 14, // Max zoom level to cluster points
+          clusterRadius: 50, // Radius of each cluster
+          clusterProperties: {
+            avg_aqi: ["+", ["get", "aqi"]], // Calculate average AQI
+          },
         });
 
+        // Add cluster layer
+        // Calculate the average AQI for stations in a cluster and color the cluster bubbles.
         map.addLayer({
           id: "clusters",
           type: "circle",
           source: "stations",
           filter: ["has", "point_count"],
           paint: {
-            "circle-color": "#fff",
+            "circle-color": [
+              "step",
+              ["get", "avg_aqi"], // Use avg_aqi in properties
+              "#00FF00", // Good (0-50) - Bright Green
+              50,
+              "#FFD700", // Moderate (51-100) - Gold
+              100,
+              "#FF8C00", // Unhealthy for Sensitive Groups (101-150) - Dark Orange
+              150,
+              "#FF4500", // Unhealthy (151-200) - Orange Red
+              200,
+              "#DC143C", // Very Unhealthy (201-300) - Crimson
+              300,
+              "#FF0000", // Hazardous (300+) - Bright Red
+            ],
             "circle-radius": [
               "step",
               ["get", "point_count"],
-              20,
+              20, // Size for small clusters
               100,
               30,
               750,
               40,
             ],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#FFFFFF", // White stroke to ensure contrast
           },
         });
 
-        map.addLayer({
-          id: "cluster-count",
-          type: "symbol",
-          source: "stations",
-          filter: ["has", "point_count"],
-          layout: {
-            "text-field": "{point_count_abbreviated}",
-            "text-size": 12,
-          },
-        });
-
+        // Add unclustered-point layer
         map.addLayer({
           id: "unclustered-point",
           type: "circle",
@@ -148,24 +181,25 @@ async function populateMarkers(
             "circle-color": [
               "step",
               ["get", "aqi"],
-              "#9BD74E",
+              "#9BD74E", // Good
               50,
-              "#f1f075",
+              "#f1f075", // Moderate
               100,
-              "#f28cb1",
+              "#f28cb1", // Unhealthy for Sensitive Groups
               150,
-              "#e55e5e",
+              "#e55e5e", // Unhealthy
               200,
-              "#d4201f",
+              "#d4201f", // Very Unhealthy
               300,
-              "#8b0000",
+              "#8b0000", // Hazardous
             ],
-            "circle-radius": 5,
+            "circle-radius": 10,
             "circle-stroke-width": 3,
             "circle-stroke-color": "#fff",
           },
         });
 
+        // Add click event listener for unclustered-point
         map.on("click", "unclustered-point", async (e: any) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
           const { stationName, uid } = e.features[0].properties;
@@ -174,27 +208,10 @@ async function populateMarkers(
             .setLngLat(coordinates)
             .setHTML(`<strong style='color:black;'>${stationName}</strong>`)
             .addTo(map);
-          // update the state with the data clicked and display on the sidebar.
+
+          // Fetch detailed information for the selected station
           const stationInfo = await getMarkerAQI(uid);
-          setSelectedStationInfo(stationInfo?.data);
-        });
-
-        map.on("click", "clusters", (e) => {
-          const features = map.queryRenderedFeatures(e.point, {
-            layers: ["clusters"],
-          });
-          const clusterId = features[0].properties.cluster_id;
-          const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-
-          source.getClusterExpansionZoom(clusterId);
-        });
-
-        map.on("mouseenter", "clusters", () => {
-          map.getCanvas().style.cursor = "pointer";
-        });
-
-        map.on("mouseleave", "clusters", () => {
-          map.getCanvas().style.cursor = "";
+          setSelectedStationInfo(stationInfo?.data); // Update the selected station info state
         });
       }
     })
@@ -283,65 +300,113 @@ function App() {
   // This useEffect is used to load the map
   useEffect(() => {
     if (map) return;
-    // This is used to initialize the map and also update the state with the initialized map. The library used here is Maplibre GL JS (https://maplibre.org).
-    setMap(
-      new maplibregl.Map({
-        container: "map",
-        style:
-          "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json", // The url to the style i.e basemap that is displayed.
-        center: [20.11, 49.35], // The center of the map around Europe.
-        zoom: 4, // The zoom level of the map.
-      })
-        .addControl(
-          // To zoom in and out.
-          new NavigationControl(),
-        )
-        .addControl(
-          // To Geolocate
+
+    // Fetch user's geolocation
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // Initialize the map with user's location
+        const newMap = new maplibregl.Map({
+          container: "map",
+          style:
+            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+          center: [longitude, latitude], // Center on user's location
+          zoom: 10, // Adjust zoom for city-level view
+        });
+
+        newMap.addControl(new NavigationControl());
+        newMap.addControl(
           new GeolocateControl({
             positionOptions: {
               enableHighAccuracy: true,
             },
+            trackUserLocation: true,
           }),
-        ),
+        );
+
+        // Add a marker for the user's current location
+        new maplibregl.Marker({ color: "green" }) // Customize the pin color
+          .setLngLat([longitude, latitude]) // Set to user's location
+          .addTo(newMap);
+
+        setMap(newMap);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+
+        // Fallback to a default location (e.g., Bangalore)
+        const fallbackLocation = { latitude: 12.9716, longitude: 77.5946 };
+        const newMap = new maplibregl.Map({
+          container: "map",
+          style:
+            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+          center: [fallbackLocation.longitude, fallbackLocation.latitude],
+          zoom: 0,
+        });
+
+        newMap.addControl(new NavigationControl());
+        newMap.addControl(
+          new GeolocateControl({
+            positionOptions: {
+              enableHighAccuracy: true,
+            },
+            trackUserLocation: true,
+          }),
+        );
+
+        // Add a marker for the fallback location
+        new maplibregl.Marker({ color: "red" }) // Customize the pin color
+          .setLngLat([fallbackLocation.longitude, fallbackLocation.latitude])
+          .addTo(newMap);
+
+        setMap(newMap);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      },
     );
   }, [map]);
 
   useEffect(() => {
     if (!map) return;
-    // Show it immediately after loading
-    // Get the bounds of the map as the user pans around
-    const bounds = map.getBounds();
-    const apiBounds =
-      bounds.getNorth() +
-      "," +
-      bounds.getWest() +
-      "," +
-      bounds.getSouth() +
-      "," +
-      bounds.getEast();
 
-    map.on("load", () => {
-      populateMarkers(map, apiBounds, setSelectedStationInfo);
+    map.on("load", async () => {
+      await populateMarkers(map, setSelectedStationInfo);
     });
-    // //Fetch new data when panning
-    // setTimeout(function () {
-    //   map.on("moveend", () => {
-    //     populateMarkers(map, apiBounds, setSelectedStationInfo);
-    //   });
-    // }, 5000);
+
+    map.on("moveend", async () => {
+      await populateMarkers(map, setSelectedStationInfo);
+    });
   }, [map]);
 
   useEffect(() => {
-    // Use the user location as the default air quality information when the application loads
     const getUserCurrentLocationAQI = async () => {
-      const data = await (
-        await fetch(
-          `https://api.waqi.info/feed/here/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
-        )
-      ).json();
-      setSelectedStationInfo(data.data);
+      try {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            const response = await fetch(
+              `https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+            );
+            const data = await response.json();
+            setSelectedStationInfo(data.data);
+          },
+          async () => {
+            // Fallback to default location AQI (Bangalore)
+            const response = await fetch(
+              `https://api.waqi.info/feed/geo:12.9716;77.5946/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+            );
+            const data = await response.json();
+            setSelectedStationInfo(data.data);
+          },
+        );
+      } catch (error) {
+        console.error("Error fetching AQI data:", error);
+      }
     };
+
     getUserCurrentLocationAQI();
   }, []);
 
