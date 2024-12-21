@@ -196,6 +196,16 @@ async function populateMarkers(
           },
         });
 
+        // Add hover effect to change the cursor to a pointer
+        map.on("mouseenter", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        // Revert the cursor back to default when not hovering
+        map.on("mouseleave", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "";
+        });
+
         // Add click event listener for unclustered-point
         map.on("click", "unclustered-point", async (e: any) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
