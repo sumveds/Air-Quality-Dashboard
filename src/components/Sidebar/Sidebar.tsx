@@ -1,19 +1,4 @@
 import React, { useMemo } from "react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  TooltipProps,
-} from "recharts";
-import type {
-  ValueType,
-  NameType,
-} from "recharts/types/component/DefaultTooltipContent";
 import { TSelectedStation } from "../../types";
 import AirQualityInfo from "./AirQualityInfo";
 import ForecastChart from "./ForecastChart";
@@ -23,25 +8,6 @@ type SidebarProps = {
   activePollutant: string;
   setActivePollutant: (pollutant: string) => void;
   isDarkMode: boolean;
-};
-
-// CustomTooltip left as is
-const CustomTooltip: React.FC<TooltipProps<ValueType, NameType>> = ({
-  active,
-  payload,
-  label,
-}) => {
-  if (active && payload && payload.length >= 3) {
-    return (
-      <div className="bg-white p-4 rounded-lg shadow-lg">
-        <p className="text-sm font-bold text-gray-700">{label}</p>
-        <p className="text-sm text-gray-500">Avg: {payload[0].value}</p>
-        <p className="text-sm text-gray-500">Max: {payload[1].value}</p>
-        <p className="text-sm text-gray-500">Min: {payload[2].value}</p>
-      </div>
-    );
-  }
-  return null;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -73,7 +39,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     );
   }, [selectedStationInfo, activePollutant, isDarkMode]);
 
-  // Placeholder if no station is selected
   return (
     panelContent || (
       <div

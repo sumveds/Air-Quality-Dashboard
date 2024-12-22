@@ -1,37 +1,10 @@
 import React from "react";
 import { TSelectedStation } from "../../types";
+import { useAirQuality } from "../../hooks/useAirQuality";
 
 type AirQualityInfoProps = {
   selectedStationInfo: TSelectedStation;
   isDarkMode: boolean;
-};
-
-/**
- * If you keep "getAirQualitySituation" and "backgroundColors" logic
- * in `AirQualityInfo`, you don’t have to pass them down as props.
- */
-const getAirQualitySituation = (
-  aqi: number = 0,
-): { text: string; color: string; message: string } => {
-  if (aqi <= 50) {
-    return {
-      text: "Good",
-      color: "green",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is healthy.`,
-    };
-  } else if (aqi > 50 && aqi <= 100) {
-    return {
-      text: "Moderate",
-      color: "orange",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is moderate.`,
-    };
-  } else {
-    return {
-      text: "Poor",
-      color: "red",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is unhealthy.`,
-    };
-  }
 };
 
 const backgroundColors: Record<string, string> = {
@@ -44,9 +17,7 @@ const AirQualityInfo: React.FC<AirQualityInfoProps> = ({
   selectedStationInfo,
   isDarkMode,
 }) => {
-  const { color, text, message } = getAirQualitySituation(
-    selectedStationInfo.aqi,
-  );
+  const { text, color, message } = useAirQuality(selectedStationInfo.aqi);
 
   return (
     <>
