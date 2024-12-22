@@ -18,6 +18,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import Header from "./components/Header";
 
 /**
  * These are constant variables for easy reuse.
@@ -660,21 +661,7 @@ function App() {
     <main
       className={`transition-colors duration-300 ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}
     >
-      <header
-        className={`h-14 flex items-center justify-between px-6 ${
-          isDarkMode ? "bg-black text-white" : "bg-white text-black"
-        }`}
-      >
-        <p>Global Real-Time Air Quality Monitoring Dashboard</p>
-        <button
-          onClick={toggleTheme}
-          className={`px-4 py-2 rounded-md ${
-            isDarkMode ? "bg-gray-700 text-white" : "bg-gray-300 text-black"
-          } hover:opacity-90 transition`}
-        >
-          {isDarkMode ? "Light Mode" : "Dark Mode"}
-        </button>
-      </header>
+      <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
       <div className="w-full h-screen grid grid-cols-9">
         {/* This is the sidebar where the information about the air quality is presented.*/}
         {renderSidePanel}
