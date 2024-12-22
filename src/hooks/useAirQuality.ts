@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { categorizeAQI } from "../utils/airQualityUtils";
+import { getAQIColor } from "../utils/colorUtils";
 
 interface AirQualitySituation {
   text: string;
@@ -11,6 +13,19 @@ interface AirQualitySituation {
  * information about the air quality situation (text, color, message).
  */
 export function useAirQuality(aqi: number = 0): AirQualitySituation {
+  return useMemo(() => {
+    const { category, message } = categorizeAQI(aqi);
+    const color = getAQIColor(aqi);
+    console.log("Color:", color);
+    return {
+      text: category,
+      color,
+      message,
+    };
+  }, [aqi]);
+}
+
+/*export function useAirQuality(aqi: number = 0): AirQualitySituation {
   return useMemo(() => {
     if (aqi <= 50) {
       return {
@@ -32,4 +47,4 @@ export function useAirQuality(aqi: number = 0): AirQualitySituation {
       };
     }
   }, [aqi]);
-}
+}*/

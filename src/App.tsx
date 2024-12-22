@@ -67,11 +67,15 @@ function App() {
 
   return (
     <main
-      className={`transition-colors duration-300 ${isDarkMode ? "bg-black text-white" : "bg-white text-black"}`}
+      className={`flex flex-col h-screen transition-colors duration-300 ${
+        isDarkMode ? "bg-black text-white" : "bg-white text-black"
+      }`}
     >
+      {/* Header has a fixed height (already h-14) */}
       <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
-      <div className="w-full h-screen grid grid-cols-9">
+      {/* The content below flex-1 so it takes up the rest of screen */}
+      <div className="flex-1 grid grid-cols-9">
         <Sidebar
           selectedStationInfo={selectedStationInfo}
           activePollutant={activePollutant}
@@ -79,7 +83,6 @@ function App() {
           isDarkMode={isDarkMode}
         />
 
-        {/* The new MapContainer handles all MapLibre logic. */}
         <MapContainer
           isDarkMode={isDarkMode}
           setSelectedStationInfo={setSelectedStationInfo}

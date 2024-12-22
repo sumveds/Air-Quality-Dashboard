@@ -1,6 +1,7 @@
 import maplibregl from "maplibre-gl";
 import { TSelectedStation } from "../../types";
 import AirQualityService from "../../services/airQualityService";
+import GeoService from "../../services/geoService";
 import { stationsToGeoJSON } from "./stationsToGeoJSON";
 import { addClusterLayer, addUnclusteredLayer } from "./MapLayer";
 
@@ -28,7 +29,7 @@ export async function populateMarkers(
 
   try {
     // 1) Use your service method to fetch station data within bounds
-    const stations = await AirQualityService.getStationsWithinBounds(
+    const stations = await GeoService.getStationsWithinBounds(
       latNorth,
       lngWest,
       latSouth,
