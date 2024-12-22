@@ -1,25 +1,17 @@
 /**
  * This is where we import the required libraries.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import maplibregl, {
   GeolocateControl,
   Map,
   NavigationControl,
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
+import { TSelectedStation, TStation } from "./types";
+import AirQualityService from "./services/airQualityService";
 
 /**
  * These are constant variables for easy reuse.
@@ -27,19 +19,6 @@ import Sidebar from "./components/Sidebar/Sidebar";
 const WORLD_AIR_QUALITY_BASE_API_URL: string = "https://api.waqi.info/v2/";
 const WORLD_AIR_QUALITY_API_TOKEN: string =
   "e4e922828e41a73cfe4645c0db52103229422e8a";
-
-/**
- * This is a Typescript type for a single station.
- */
-type TStation = {
-  uid: string;
-  aqi: string;
-  lat: number;
-  lon: number;
-  station: {
-    name: string;
-  };
-};
 
 /**
  * This is a function that convers the stations data to a GeoJSON FeatureCollection for easy rendering on the map.
@@ -69,21 +48,6 @@ function stationsToGeoJSON(stations: TStation[]): GeoJSON.FeatureCollection {
     type: "FeatureCollection", // Explicitly "FeatureCollection"
     features,
   };
-}
-
-/**
- * This is a function that gets the Air Quality information for a single station/point on the map.
- * @param stationUID The unique ID of the station.
- */
-async function getMarkerAQI(stationUID: string) {
-  return (
-    await fetch(
-      "https://api.waqi.info/feed/@" +
-        stationUID +
-        "/?token=" +
-        WORLD_AIR_QUALITY_API_TOKEN,
-    )
-  ).json();
 }
 
 /**
@@ -180,15 +144,15 @@ async function populateMarkers(
             "circle-color": [
               "step",
               ["get", "aqi"],
-              isDarkMode ? "#9BD74E" : "#32CD32", // Adjusted for theme
+              isDarkMode ? "#9BD74E" : "#32CD32", // 0 <= AQI < 50
               50,
-              isDarkMode ? "#FFD700" : "#FFC107", // Adjusted for theme
+              isDarkMode ? "#FFD700" : "#FFC107", // 50 <= AQI < 100
               100,
-              isDarkMode ? "#FF8C00" : "#FF5722", // Adjusted for theme
+              isDarkMode ? "#FF8C00" : "#FF5722", // 100 <= AQI < 150
               150,
-              isDarkMode ? "#FF4500" : "#E53935", // Adjusted for theme
+              isDarkMode ? "#FF4500" : "#E53935", // 150 <= AQI < 200
               200,
-              isDarkMode ? "#DC143C" : "#C62828", // Adjusted for theme
+              isDarkMode ? "#DC143C" : "#C62828", // 200 <= AQI < 300
               300,
               isDarkMode ? "#FF0000" : "#B71C1C", // Adjusted for theme
             ],
@@ -221,7 +185,7 @@ async function populateMarkers(
 
           // Fetch detailed information for the selected station
           try {
-            const stationInfo = await getMarkerAQI(uid); // Fetch station data
+            const stationInfo = await AirQualityService.getAirQuality(uid); // Fetch station data
             if (stationInfo && stationInfo.data) {
               setSelectedStationInfo(stationInfo.data); // Update the side panel state
             } else {
@@ -237,73 +201,6 @@ async function populateMarkers(
       console.error("Error fetching station data:", error);
     });
 }
-
-/**
- * This functions takes an air quality index and returns some information about it.
- * @param aqi The Air Quality Index (AQI) value.
- * @returns The category of the value, the color code and a message.
- */
-const getAirQualitySituation = (
-  aqi: number = 0,
-): { text: string; color: string; message: string } => {
-  if (aqi <= 50) {
-    return {
-      text: "Good",
-      color: "green",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is healthy.`,
-    };
-  } else if (aqi > 50 && aqi <= 100) {
-    return {
-      text: "Moderate",
-      color: "orange",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is moderate.`,
-    };
-  } else {
-    return {
-      text: "Poor",
-      color: "red",
-      message: `An AQI of ${aqi}µg/m³ indicates that the air quality is unhealthy.`,
-    };
-  }
-};
-
-/**
- * This is a Typescript type that represents the data type of the API response for a selected station.
- */
-type TSelectedStation = {
-  aqi: number;
-  city: {
-    name: string;
-    url: string;
-  };
-  attributions: { logo: string; name: string; url: string }[];
-  time: {
-    iso: string;
-    s: string;
-  };
-  forecast: {
-    daily: {
-      o3: { avg: number; day: string; max: number; min: number }[];
-      pm10: { avg: number; day: string; max: number; min: number }[];
-      pm25: { avg: number; day: string; max: number; min: number }[];
-      no2: { avg: number; day: string; max: number; min: number }[];
-    };
-  };
-  iaqi: {
-    pm10?: {
-      v: number;
-    };
-    pm25?: {
-      v: number;
-    };
-    no2?: {
-      v: number;
-    };
-    o3?: {
-      v: number;
-    };
-  };
-};
 
 /**
  * This is a React Component to write our application code.
@@ -337,7 +234,7 @@ function App() {
           style:
             "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
           center: [longitude, latitude],
-          zoom: 10,
+          zoom: 7,
         });
 
         newMap.addControl(new NavigationControl());

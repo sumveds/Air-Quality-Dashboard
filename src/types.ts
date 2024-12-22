@@ -24,3 +24,13 @@ export type TSelectedStation = {
     o3?: { v: number };
   };
 };
+
+export type TStation = {
+  uid: string;
+  aqi: string;
+  lat: number;
+  lon: number;
+  station: {
+    name: string;
+  };
+};
