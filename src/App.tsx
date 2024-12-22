@@ -2,11 +2,8 @@ import { useEffect, useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { TSelectedStation } from "./types";
-import {
-  WORLD_AIR_QUALITY_API_TOKEN,
-  WORLD_AIR_QUALITY_BASE_API_URL,
-} from "./constants";
 import MapContainer from "./components/Map/MapContainer";
+import AirQualityService from "./services/airQualityService";
 
 function App() {
   const [selectedStationInfo, setSelectedStationInfo] =
@@ -18,27 +15,28 @@ function App() {
     setIsDarkMode((prevMode) => !prevMode);
   };
 
-  // Optionally keep or remove this effect if you want to display the
-  // user's own station info in the sidebar.
+  // Display the user's location info in the sidebar
   useEffect(() => {
     const getUserCurrentLocationAQI = async () => {
       try {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords;
-            const response = await fetch(
-              `${WORLD_AIR_QUALITY_BASE_API_URL}feed/geo:${latitude};${longitude}/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+
+            // Use the new service method
+            const data = await AirQualityService.getAirQualityByCoords(
+              latitude,
+              longitude,
             );
-            const data = await response.json();
             setSelectedStationInfo(data.data);
           },
           async () => {
             // Fallback to default location AQI (Bangalore)
-            const response = await fetch(
-              `${WORLD_AIR_QUALITY_BASE_API_URL}feed/geo:12.9716;77.5946/?token=${WORLD_AIR_QUALITY_API_TOKEN}`,
+            const fallbackData = await AirQualityService.getAirQualityByCoords(
+              12.9716, // Bangalore lat
+              77.5946, // Bangalore lon
             );
-            const data = await response.json();
-            setSelectedStationInfo(data.data);
+            setSelectedStationInfo(fallbackData.data);
           },
         );
       } catch (error) {
@@ -49,32 +47,14 @@ function App() {
     getUserCurrentLocationAQI();
   }, []);
 
-  // Set the first available forecast data as the default selected
-  useEffect(() => {
-    if (!selectedStationInfo?.forecast) return;
-    if (activePollutant !== "") return;
-
-    if (selectedStationInfo.forecast.daily.no2) {
-      setActivePollutant("no2");
-    } else if (selectedStationInfo.forecast.daily.pm10) {
-      setActivePollutant("pm10");
-    } else if (selectedStationInfo.forecast.daily.pm25) {
-      setActivePollutant("pm25");
-    } else if (selectedStationInfo.forecast.daily.o3) {
-      setActivePollutant("o3");
-    }
-  }, [selectedStationInfo?.forecast, activePollutant]);
-
   return (
     <main
       className={`flex flex-col h-screen transition-colors duration-300 ${
         isDarkMode ? "bg-black text-white" : "bg-white text-black"
       }`}
     >
-      {/* Header has a fixed height (already h-14) */}
       <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
-      {/* The content below flex-1 so it takes up the rest of screen */}
       <div className="flex-1 grid grid-cols-9">
         <Sidebar
           selectedStationInfo={selectedStationInfo}

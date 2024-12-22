@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -51,6 +51,21 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
   setActivePollutant,
   isDarkMode,
 }) => {
+  useEffect(() => {
+    if (!selectedStationInfo?.forecast) return;
+    if (activePollutant !== "") return;
+
+    if (selectedStationInfo.forecast.daily.no2) {
+      setActivePollutant("no2");
+    } else if (selectedStationInfo.forecast.daily.pm10) {
+      setActivePollutant("pm10");
+    } else if (selectedStationInfo.forecast.daily.pm25) {
+      setActivePollutant("pm25");
+    } else if (selectedStationInfo.forecast.daily.o3) {
+      setActivePollutant("o3");
+    }
+  }, [selectedStationInfo?.forecast, activePollutant]);
+
   // If the station doesn't have forecast data, just render nothing (or fallback UI).
   if (!selectedStationInfo.forecast?.daily) {
     return null;

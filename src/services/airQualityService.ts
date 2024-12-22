@@ -21,4 +21,25 @@ export default class AirQualityService {
 
     return response.json();
   }
+
+  /**
+   * Fetches air quality data by geographic coordinates (latitude & longitude).
+   * @param latitude  The latitude of the location.
+   * @param longitude The longitude of the location.
+   */
+  static async getAirQualityByCoords(
+    latitude: number,
+    longitude: number,
+  ): Promise<any> {
+    const url = `${WORLD_AIR_QUALITY_BASE_API_URL}feed/geo:${latitude};${longitude}/?token=${WORLD_AIR_QUALITY_API_TOKEN}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch coords-based AQI (status: ${response.status})`,
+      );
+    }
+
+    return response.json();
+  }
 }
