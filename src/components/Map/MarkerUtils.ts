@@ -4,16 +4,12 @@ import AirQualityService from "../../services/airQualityService";
 import { stationsToGeoJSON } from "./stationsToGeoJSON";
 import { addClusterLayer, addUnclusteredLayer } from "./MapLayer";
 
-const WORLD_AIR_QUALITY_BASE_API_URL = "https://api.waqi.info/";
-const WORLD_AIR_QUALITY_API_TOKEN = "e4e922828e41a73cfe4645c0db52103229422e8a";
-
 /**
- * This is a function that populates the points on the map.
+ * This function populates the points on the map.
  * @param map The maplibre map instance.
- * @param bounds The current bounding box of the map.
  * @param setSelectedStationInfo The callback function to update the state with the clicked/selected station.
+ * @param isDarkMode Whether dark mode is active (for coloring the layers)
  */
-
 export async function populateMarkers(
   map: maplibregl.Map,
   setSelectedStationInfo: (station: TSelectedStation) => void,
@@ -24,79 +20,84 @@ export async function populateMarkers(
   const zoomLevel = map.getZoom();
   const factor = zoomLevel < 10 ? 1 : 0.1;
 
-  const extendedBounds = [
-    mapBounds.getNorth() + factor,
-    mapBounds.getWest() - factor,
-    mapBounds.getSouth() - factor,
-    mapBounds.getEast() + factor,
-  ].join(",");
+  // Grab extended bounding box
+  const latNorth = mapBounds.getNorth() + factor;
+  const lngWest = mapBounds.getWest() - factor;
+  const latSouth = mapBounds.getSouth() - factor;
+  const lngEast = mapBounds.getEast() + factor;
 
-  await fetch(
-    `${WORLD_AIR_QUALITY_BASE_API_URL}v2/map/bounds/?latlng=${extendedBounds}&token=${WORLD_AIR_QUALITY_API_TOKEN}`,
-  )
-    .then((data) => data.json())
-    .then((stations) => {
-      if (stations.status !== "ok") throw stations.data;
+  try {
+    // 1) Use your service method to fetch station data within bounds
+    const stations = await AirQualityService.getStationsWithinBounds(
+      latNorth,
+      lngWest,
+      latSouth,
+      lngEast,
+    );
 
-      const geoJSON = stationsToGeoJSON(stations.data);
+    if (stations.status !== "ok") {
+      throw stations.data || new Error("Failed to fetch station data");
+    }
 
-      if (map.getSource("stations")) {
-        const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-        source.setData(geoJSON);
-      } else {
-        map.addSource("stations", {
-          type: "geojson",
-          data: geoJSON,
-          cluster: true,
-          clusterMaxZoom: 14,
-          clusterRadius: 50,
-          clusterProperties: {
-            avg_aqi: ["+", ["get", "aqi"]],
-          },
-        });
+    // 2) Convert station data to GeoJSON
+    const geoJSON = stationsToGeoJSON(stations.data);
 
-        // Add cluster layer with updated colors
-        addClusterLayer(map, isDarkMode);
+    // 3) Check if we already have a "stations" source; if yes, update it
+    if (map.getSource("stations")) {
+      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
+      source.setData(geoJSON);
+    } else {
+      // 4) Otherwise, add the source
+      map.addSource("stations", {
+        type: "geojson",
+        data: geoJSON,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+        clusterProperties: {
+          avg_aqi: ["+", ["get", "aqi"]], // Summation for cluster
+        },
+      });
 
-        // Add unclustered-point layer
-        addUnclusteredLayer(map, isDarkMode);
+      // 5) Add the cluster layer
+      addClusterLayer(map, isDarkMode);
 
-        // Add hover effect to change the cursor to a pointer
-        map.on("mouseenter", "unclustered-point", () => {
-          map.getCanvas().style.cursor = "pointer";
-        });
+      // 6) Add the unclustered-point layer
+      addUnclusteredLayer(map, isDarkMode);
 
-        // Revert the cursor back to default when not hovering
-        map.on("mouseleave", "unclustered-point", () => {
-          map.getCanvas().style.cursor = "";
-        });
+      // 7) Add hover effect to change the cursor
+      map.on("mouseenter", "unclustered-point", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "unclustered-point", () => {
+        map.getCanvas().style.cursor = "";
+      });
 
-        // Add click event listener for unclustered-point
-        map.on("click", "unclustered-point", async (e: any) => {
-          const coordinates = e.features[0].geometry.coordinates.slice();
-          const { stationName, uid } = e.features[0].properties;
+      // 8) Add click event listener for unclustered-point
+      map.on("click", "unclustered-point", async (e: any) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const { stationName, uid } = e.features[0].properties;
 
-          // Add a popup at the clicked location
-          new maplibregl.Popup()
-            .setLngLat(coordinates)
-            .setHTML(`<strong style="color:black;">${stationName}</strong>`)
-            .addTo(map);
+        // Show popup for station
+        new maplibregl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`<strong style="color:black;">${stationName}</strong>`)
+          .addTo(map);
 
-          // Fetch detailed information for the selected station
-          try {
-            const stationInfo = await AirQualityService.getAirQuality(uid); // Fetch station data
-            if (stationInfo && stationInfo.data) {
-              setSelectedStationInfo(stationInfo.data); // Update the side panel state
-            } else {
-              console.error("Failed to fetch station information");
-            }
-          } catch (error) {
-            console.error("Error fetching station data:", error);
+        // Fetch the detailed station info
+        try {
+          const stationInfo = await AirQualityService.getAirQuality(uid);
+          if (stationInfo && stationInfo.data) {
+            setSelectedStationInfo(stationInfo.data);
+          } else {
+            console.error("Failed to fetch station information");
           }
-        });
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching station data:", error);
-    });
+        } catch (error) {
+          console.error("Error fetching station data:", error);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error fetching station data:", error);
+  }
 }
