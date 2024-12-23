@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div
-      className={`w-full h-full bg-[#383841] text-white transition-transform duration-300 ${
+      className={`w-full h-full bg-[#383841] text-white transition-transform duration-300 overflow-y-auto ${
         isVisible ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:col-span-4`}
     >

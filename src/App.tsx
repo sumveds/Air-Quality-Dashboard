@@ -81,10 +81,10 @@ function App() {
         toggleSidebar={toggleSidebar}
       />
 
-      <div className="flex-1 grid grid-cols-12">
+      <div className="flex-1 grid grid-cols-12 overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`transform transition-transform duration-300 ${
+          className={`transform transition-transform duration-300 overflow-hidden ${
             isSidebarVisible
               ? "w-full col-span-12 fixed inset-0 z-50 bg-[#383841] text-white md:relative md:w-auto md:col-span-4"
               : "hidden"
@@ -99,7 +99,6 @@ function App() {
             toggleSidebar={toggleSidebar}
           />
         </div>
-
         {/* Map */}
         <div
           className={`transition-all duration-300 ${
