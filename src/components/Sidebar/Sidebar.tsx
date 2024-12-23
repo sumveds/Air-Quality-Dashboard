@@ -8,6 +8,8 @@ type SidebarProps = {
   activePollutant: string;
   setActivePollutant: (pollutant: string) => void;
   isDarkMode: boolean;
+  isVisible: boolean;
+  toggleSidebar: () => void;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -15,16 +17,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   activePollutant,
   setActivePollutant,
   isDarkMode,
+  isVisible,
+  toggleSidebar,
 }) => {
   const panelContent = useMemo(() => {
     if (!selectedStationInfo) return null;
 
     return (
-      <div
-        className={`col-span-3 space-y-1.5 h-[95dvh] overflow-scroll transition-colors duration-300 ${
-          isDarkMode ? "bg-[#383841] text-white" : "bg-gray-100 text-black"
-        }`}
-      >
+      <div className="space-y-1.5">
         <AirQualityInfo
           selectedStationInfo={selectedStationInfo}
           isDarkMode={isDarkMode}
@@ -40,15 +40,25 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [selectedStationInfo, activePollutant, isDarkMode]);
 
   return (
-    panelContent || (
-      <div
-        className={`col-span-3 flex items-center justify-center h-[95dvh] transition-colors duration-300 ${
-          isDarkMode ? "bg-[#383841] text-white" : "bg-gray-100 text-black"
-        }`}
+    <div
+      className={`w-full h-full bg-[#383841] text-white transition-transform duration-300 ${
+        isVisible ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0 md:col-span-4`}
+    >
+      {/* Close Button for Mobile */}
+      <button
+        className="md:hidden absolute top-4 right-4 text-white"
+        onClick={toggleSidebar}
       >
-        <p>No station selected yet.</p>
-      </div>
-    )
+        ✕
+      </button>
+
+      {panelContent || (
+        <div className="flex items-center justify-center h-full">
+          <p>No station selected yet.</p>
+        </div>
+      )}
+    </div>
   );
 };
 
