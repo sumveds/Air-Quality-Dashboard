@@ -49,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <button
         className="md:hidden absolute top-4 right-4 text-white"
         onClick={toggleSidebar}
+        style={{ fontSize: "1.5rem" }}
       >
         ✕
       </button>
