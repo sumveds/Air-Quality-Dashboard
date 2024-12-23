@@ -9,7 +9,7 @@ function App() {
   const [selectedStationInfo, setSelectedStationInfo] =
     useState<TSelectedStation | null>(null);
   const [activePollutant, setActivePollutant] = useState<string>("");
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
   const toggleTheme = () => {
