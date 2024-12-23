@@ -24,9 +24,10 @@ const AirQualityInfo: React.FC<AirQualityInfoProps> = ({
       <div
         className={`p-6 flex flex-col gap-y-3 ${backgroundColors[color]} text-black`}
       >
-        <a href={selectedStationInfo.city.url} target="_blank" rel="noreferrer">
+        {/* <a href={selectedStationInfo.city.url} target="_blank" rel="noreferrer">
           <p className="text-base">{selectedStationInfo.city.name}</p>
-        </a>
+        </a> */}
+        <p className="text-base">{selectedStationInfo.city.name}</p>
         <p className="text-3xl">{text}</p>
         <p className="text-3xl">
           AQI <span className="font-semibold">{selectedStationInfo.aqi}</span>

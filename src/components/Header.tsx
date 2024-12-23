@@ -19,9 +19,8 @@ const Header: React.FC<HeaderProps> = ({
     >
       {/* Sidebar Toggle Button for Mobile */}
       <button
-        className="md:hidden"
+        className="md:hidden text-2xl sm:text-[2.5rem]"
         onClick={toggleSidebar}
-        style={{ fontSize: "1.5rem" }}
       >
         ☰
       </button>
