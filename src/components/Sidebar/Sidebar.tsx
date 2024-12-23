@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Close Button for Mobile */}
       <button
-        className="md:hidden absolute top-4 right-4 text-white text-[1.5rem]"
+        className="md:hidden absolute top-4 right-4 text-white text-[2.0rem]"
         onClick={toggleSidebar}
       >
         ✕
