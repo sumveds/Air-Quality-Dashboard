@@ -85,7 +85,9 @@ function App() {
         {/* Sidebar */}
         <div
           className={`transform transition-transform duration-300 ${
-            isSidebarVisible ? "block col-span-4" : "hidden"
+            isSidebarVisible
+              ? "w-full col-span-12 fixed inset-0 z-50 bg-[#383841] text-white md:relative md:w-auto md:col-span-4"
+              : "hidden"
           }`}
         >
           <Sidebar
