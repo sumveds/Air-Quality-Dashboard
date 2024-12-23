@@ -5,16 +5,15 @@ import { useMap } from "../../hooks/useMap";
 type MapContainerProps = {
   isDarkMode: boolean;
   setSelectedStationInfo: (station: TSelectedStation | null) => void;
+  isSidebarVisible: boolean;
 };
 
 const MapContainer: React.FC<MapContainerProps> = ({
   isDarkMode,
   setSelectedStationInfo,
 }) => {
-  // 1) Call the custom hook
   const { mapContainerRef } = useMap({ isDarkMode, setSelectedStationInfo });
 
-  // 2) Render the <div> that hosts the map
   return (
     <div
       ref={mapContainerRef}
