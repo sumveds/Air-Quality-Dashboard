@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import GeoService from "../services/geoService";
+// import "../path/to/place-search.css";
 
 type PlaceSearchProps = {
   onSearch: (lat: number, lon: number) => void;
@@ -40,7 +41,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
     if (fetchEnabled) {
       const debounceTimeout = setTimeout(() => {
         fetchSuggestions(searchQuery);
-      }, 300); // Debounce API calls
+      }, 300);
       return () => clearTimeout(debounceTimeout);
     }
   }, [searchQuery, fetchEnabled]);
@@ -50,7 +51,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
 
     if (event.key === "ArrowDown") {
       setFocusedIndex((prev) => (prev + 1) % suggestions.length);
-      event.preventDefault(); // Prevent cursor from moving in input
+      event.preventDefault();
     } else if (event.key === "ArrowUp") {
       setFocusedIndex((prev) => {
         return prev === -1
@@ -59,7 +60,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
       });
       event.preventDefault();
     } else if (event.key === "Enter" && focusedIndex >= 0) {
-      event.preventDefault(); // Prevent form submission
+      event.preventDefault();
       const selectedSuggestion = suggestions[focusedIndex];
       setSearchQuery(selectedSuggestion.place_name);
       setSuggestions([]);
@@ -82,9 +83,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
           setFetchEnabled(true);
         }}
         placeholder="Search location..."
-        className={`p-2 border rounded-lg mr-2 ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-        }`}
+        className={`inputField ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}
         onKeyDown={handleKeyDown}
       />
       {isLoading && (
