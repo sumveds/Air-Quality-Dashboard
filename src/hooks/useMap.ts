@@ -31,6 +31,13 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
   const shouldCallApi = useRef(true); // Restrict API calls
   const currentStyleUrl = useRef<string | null>(null); // Track current style URL
 
+  useEffect(() => {
+    if (map) {
+      const style = isDarkMode ? "dark-style-url" : "light-style-url";
+      map.setStyle(style);
+    }
+  }, [isDarkMode]);
+
   // 1) Create the map once, on mount
   useEffect(() => {
     if (map) return; // Map already created
