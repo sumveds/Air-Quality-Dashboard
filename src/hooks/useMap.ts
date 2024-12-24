@@ -28,6 +28,8 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
   const [userCoordinates, setUserCoordinates] = useState<
     [number, number] | null
   >(null);
+  const shouldCallApi = useRef(true); // Restrict API calls
+  const currentStyleUrl = useRef<string | null>(null); // Track current style URL
 
   // 1) Create the map once, on mount
   useEffect(() => {
@@ -63,6 +65,8 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
             .addTo(newMap);
 
           setMap(newMap);
+          currentStyleUrl.current =
+            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
         }
       },
       (error) => {
@@ -79,6 +83,8 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
           });
           fallbackMap.addControl(new NavigationControl());
           setMap(fallbackMap);
+          currentStyleUrl.current =
+            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
         }
       },
     );
@@ -93,29 +99,41 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
       ? "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       : "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
-    map.setStyle(styleUrl);
+    // Only set the style if it is different from the current style
+    if (currentStyleUrl.current !== styleUrl) {
+      currentStyleUrl.current = styleUrl;
+      map.setStyle(styleUrl);
 
-    // When style finishes loading, re-add user marker and re-populate markers
-    map.on("styledata", async () => {
-      new maplibregl.Marker({ color: "green" })
-        .setLngLat(userCoordinates)
-        .addTo(map);
+      // When style finishes loading, re-add user marker and re-populate markers
+      map.once("styledata", async () => {
+        new maplibregl.Marker({ color: "green" })
+          .setLngLat(userCoordinates)
+          .addTo(map);
 
-      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
-    });
+        await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+      });
+    }
   }, [isDarkMode, map, userCoordinates, setSelectedStationInfo]);
 
-  // 3) On map load and movement, fetch or update markers
+  // 3) On map load and movement, fetch or update markers with restricted calls
   useEffect(() => {
     if (!map) return;
 
-    map.on("load", async () => {
-      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
-    });
+    const handleMapBoundsChange = async () => {
+      if (shouldCallApi.current) {
+        shouldCallApi.current = false; // Prevent additional calls
+        setTimeout(() => (shouldCallApi.current = true), 2000); // Reset after 2 seconds
+        await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+      }
+    };
 
-    map.on("moveend", async () => {
-      await populateMarkers(map, setSelectedStationInfo, isDarkMode);
-    });
+    map.on("load", handleMapBoundsChange);
+    map.on("moveend", handleMapBoundsChange);
+
+    return () => {
+      map.off("load", handleMapBoundsChange);
+      map.off("moveend", handleMapBoundsChange);
+    };
   }, [map, setSelectedStationInfo, isDarkMode]);
 
   return { mapContainerRef, map, userCoordinates };

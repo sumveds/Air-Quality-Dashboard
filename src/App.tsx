@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { TSelectedStation } from "./types";
@@ -6,11 +6,13 @@ import MapContainer from "./components/Map/MapContainer";
 import AirQualityService from "./services/airQualityService";
 
 function App() {
-  const [selectedStationInfo, setSelectedStationInfo] =
+  const [selectedStationInfo, setSelectedStationInfoState] =
     useState<TSelectedStation | null>(null);
   const [activePollutant, setActivePollutant] = useState<string>("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+
+  const hasFetchedData = useRef(false);
 
   const toggleTheme = () => {
     setIsDarkMode((prevMode) => !prevMode);
@@ -18,6 +20,11 @@ function App() {
 
   const toggleSidebar = () => {
     setIsSidebarVisible((prevVisible) => !prevVisible);
+  };
+
+  const setSelectedStationInfo = (station: TSelectedStation | null) => {
+    console.log("setSelectedStationInfo called with:", station);
+    setSelectedStationInfoState(station);
   };
 
   // Automatically hide sidebar when screen width is small
@@ -43,14 +50,18 @@ function App() {
   // Fetch air quality data
   useEffect(() => {
     const getUserCurrentLocationAQI = async () => {
+      if (hasFetchedData.current) return;
+      hasFetchedData.current = true;
       try {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
+            console.log("Position:", position.coords);
             const { latitude, longitude } = position.coords;
             const data = await AirQualityService.getAirQualityByCoords(
               latitude,
               longitude,
             );
+            console.log("Air quality:", data.data);
             setSelectedStationInfo(data.data);
           },
           async () => {
@@ -58,6 +69,7 @@ function App() {
               12.9716, // Bangalore lat
               77.5946, // Bangalore lon
             );
+            console.log("Air quality of default location:", fallbackData.data);
             setSelectedStationInfo(fallbackData.data);
           },
         );
