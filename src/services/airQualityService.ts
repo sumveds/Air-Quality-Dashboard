@@ -2,6 +2,7 @@ import {
   WORLD_AIR_QUALITY_API_TOKEN,
   WORLD_AIR_QUALITY_BASE_API_URL,
 } from "../constants";
+import GeoService from "./geoService";
 
 export default class AirQualityService {
   /**
@@ -41,5 +42,24 @@ export default class AirQualityService {
     }
 
     return response.json();
+  }
+
+  static async getAirQualityOfNearestStation(
+    latitude: number,
+    longitude: number,
+  ): Promise<any> {
+    const nearestStation = await GeoService.getNearestStation(
+      latitude,
+      longitude,
+    );
+    if (nearestStation) {
+      const stationInfo = await AirQualityService.getAirQuality(
+        nearestStation?.uid,
+      );
+      return stationInfo;
+    } else {
+      // TODO Throw an error
+      console.log("getAirQualityOfNearestStation: No nearest station found!!!");
+    }
   }
 }

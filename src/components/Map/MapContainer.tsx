@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useMap } from "../../hooks/useMap";
 import maplibregl, { Map as MapLibreMap } from "maplibre-gl";
 import { TSelectedStation, TStationCoordinates } from "../../types";
+import AirQualityService from "../../services/airQualityService";
 
 type MapContainerProps = {
   isDarkMode: boolean;
@@ -38,10 +39,22 @@ const MapContainer: React.FC<MapContainerProps> = ({
       new maplibregl.Marker({ color: "red" })
         .setLngLat([location.lon, location.lat])
         .addTo(map);
+
+      // Fetch nearest station
+      fetchNearestStationInfo(location);
     } else if (!map) {
       console.log("Map is not initialized yet.");
     }
   }, [map, location]);
+
+  const fetchNearestStationInfo = async (location: TStationCoordinates) => {
+    const nearestStationInfo =
+      await AirQualityService.getAirQualityOfNearestStation(
+        location.lat,
+        location.lon,
+      );
+    setSelectedStationInfo(nearestStationInfo.data);
+  };
 
   return <div ref={mapContainerRef} className="col-span-6 w-full h-[95dvh]" />;
 };
