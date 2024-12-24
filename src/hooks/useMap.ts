@@ -44,7 +44,7 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
 
     // Check if the device has a small screen
     const isSmallDevice = window.innerWidth < 768;
-    const initialZoom = isSmallDevice ? 8 : 7; // Zoom in more for small devices
+    const initialZoom = isSmallDevice ? 9 : 7;
 
     // Attempt geolocation
     navigator.geolocation.getCurrentPosition(
