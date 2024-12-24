@@ -35,6 +35,10 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
   useEffect(() => {
     if (map) return; // Map already created
 
+    // Check if the device has a small screen
+    const isSmallDevice = window.innerWidth < 768;
+    const initialZoom = isSmallDevice ? 8 : 7; // Zoom in more for small devices
+
     // Attempt geolocation
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -48,7 +52,7 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
             style:
               "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             center: [longitude, latitude],
-            zoom: 7,
+            zoom: initialZoom, // Use the dynamic zoom level
           });
 
           newMap.addControl(new NavigationControl());
@@ -79,7 +83,7 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
             style:
               "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             center: [78.9629, 20.5937], // near center of India
-            zoom: 4,
+            zoom: isSmallDevice ? 6 : 4, // Adjust fallback zoom level
           });
           fallbackMap.addControl(new NavigationControl());
           setMap(fallbackMap);
