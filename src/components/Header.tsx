@@ -24,21 +24,6 @@ const Header: React.FC<HeaderProps> = ({
   >([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const selectedSuggestion = suggestions.find(
-      (suggestion) => suggestion.text === searchQuery,
-    );
-    if (selectedSuggestion) {
-      onSearch(
-        selectedSuggestion.coordinates.lat,
-        selectedSuggestion.coordinates.lon,
-      );
-      setSearchQuery("");
-      setSuggestions([]);
-    }
-  };
-
   const fetchSuggestions = async (query: string) => {
     if (!query.trim()) {
       setSuggestions([]);
@@ -75,7 +60,7 @@ const Header: React.FC<HeaderProps> = ({
         ☰
       </button>
       <h1 className="text-lg font-bold">Air Quality App</h1>
-      <form onSubmit={handleSearch} className="flex items-center relative">
+      <div className="relative">
         <input
           type="text"
           value={searchQuery}
@@ -98,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
                   onSearch(
                     suggestion.coordinates.lat,
                     suggestion.coordinates.lon,
-                  );
+                  ); // Send selected coordinates to App
                 }}
               >
                 {suggestion.place_name}
@@ -106,13 +91,7 @@ const Header: React.FC<HeaderProps> = ({
             ))}
           </ul>
         )}
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Search
-        </button>
-      </form>
+      </div>
       <button onClick={toggleTheme}>
         {isDarkMode ? "Light Mode" : "Dark Mode"}
       </button>

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useMap } from "../../hooks/useMap";
-import L, { Map as LeafletMap } from "leaflet";
+import maplibregl, { Map as MapLibreMap } from "maplibre-gl";
 import { TSelectedStation, TStationCoordinates } from "../../types";
 
 type MapContainerProps = {
@@ -15,15 +15,31 @@ const MapContainer: React.FC<MapContainerProps> = ({
   setSelectedStationInfo,
   location,
 }) => {
+  console.log("Received location prop in MapContainer:", location);
   const { mapContainerRef, map } = useMap({
     isDarkMode,
     setSelectedStationInfo,
   });
 
   useEffect(() => {
-    if (map instanceof LeafletMap && location) {
-      map.setView([location.lat, location.lon], 13);
-      L.marker([location.lat, location.lon]).addTo(map);
+    console.log("Map useEffect triggered with location:", location);
+
+    if (map instanceof MapLibreMap && location) {
+      console.log("Focusing map on location:", location);
+
+      // Fly to the location
+      map.flyTo({
+        center: [location.lon, location.lat],
+        zoom: 13,
+        essential: true, // Ensures the animation is essential
+      });
+
+      // Add a marker at the new location
+      new maplibregl.Marker({ color: "red" })
+        .setLngLat([location.lon, location.lat])
+        .addTo(map);
+    } else if (!map) {
+      console.log("Map is not initialized yet.");
     }
   }, [map, location]);
 
