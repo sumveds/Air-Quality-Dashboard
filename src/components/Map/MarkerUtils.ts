@@ -86,7 +86,6 @@ export const populateMarkers = throttle(
             .setHTML(`<strong style="color:black;">${stationName}</strong>`)
             .addTo(map);
 
-          // Fetch the detailed station info
           try {
             const stationInfo = await AirQualityService.getAirQuality(uid);
             if (stationInfo && stationInfo.data) {

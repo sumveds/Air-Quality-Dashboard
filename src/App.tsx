@@ -23,8 +23,10 @@ function App() {
   };
 
   const setSelectedStationInfo = (station: TSelectedStation | null) => {
-    console.log("setSelectedStationInfo called with:", station);
     setSelectedStationInfoState(station);
+    if (window.innerWidth < 768 && !isSidebarVisible) {
+      toggleSidebar();
+    }
   };
 
   // Automatically hide sidebar when screen width is small
