@@ -23,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({
     }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1); // Tracks the currently focused suggestion
 
   const fetchSuggestions = async (query: string) => {
     if (!query.trim()) {
@@ -33,6 +34,7 @@ const Header: React.FC<HeaderProps> = ({
     try {
       const results = await GeoService.searchPlace(query);
       setSuggestions(results);
+      setFocusedIndex(-1); // Reset focused index when new suggestions load
     } catch (error) {
       console.error(error);
     } finally {
@@ -46,6 +48,34 @@ const Header: React.FC<HeaderProps> = ({
     }, 300); // Debounce API calls
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (suggestions.length === 0) return;
+
+    if (event.key === "ArrowDown") {
+      // Move focus to the next suggestion
+      setFocusedIndex((prev) => (prev + 1) % suggestions.length);
+      event.preventDefault(); // Prevent cursor from moving in input
+    } else if (event.key === "ArrowUp") {
+      // Move focus to the previous suggestion
+      setFocusedIndex((prev) =>
+        prev === -1
+          ? suggestions.length - 1
+          : (prev - 1 + suggestions.length) % suggestions.length,
+      );
+      event.preventDefault();
+    } else if (event.key === "Enter" && focusedIndex >= 0) {
+      // Select the currently focused suggestion
+      const selectedSuggestion = suggestions[focusedIndex];
+      setSearchQuery(selectedSuggestion.text);
+      setSuggestions([]);
+      onSearch(
+        selectedSuggestion.coordinates.lat,
+        selectedSuggestion.coordinates.lon,
+      );
+      event.preventDefault(); // Prevent form submission
+    }
+  };
 
   return (
     <header
@@ -67,6 +97,7 @@ const Header: React.FC<HeaderProps> = ({
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search location..."
           className="p-2 border rounded-lg mr-2"
+          onKeyDown={handleKeyDown} // Listen for key events
         />
         {isLoading && (
           <div className="absolute top-full mt-2 text-sm">Loading...</div>
@@ -76,14 +107,16 @@ const Header: React.FC<HeaderProps> = ({
             {suggestions.map((suggestion, index) => (
               <li
                 key={index}
-                className="p-2 hover:bg-gray-100 cursor-pointer"
+                className={`p-2 cursor-pointer ${
+                  focusedIndex === index ? "bg-gray-100" : ""
+                }`}
                 onClick={() => {
                   setSearchQuery(suggestion.text);
                   setSuggestions([]);
                   onSearch(
                     suggestion.coordinates.lat,
                     suggestion.coordinates.lon,
-                  ); // Send selected coordinates to App
+                  );
                 }}
               >
                 {suggestion.place_name}
