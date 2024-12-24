@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({
       >
         ☰
       </button>
-      <h1 className="text-lg font-bold xs:hidden">Air Quality App</h1>
+      <h1 className="text-lg font-bold hidden md:block">Air Quality App</h1>
       <PlaceSearch onSearch={onSearch} isDarkMode={isDarkMode} />
       <button onClick={toggleTheme}>
         {isDarkMode ? "Light Mode" : "Dark Mode"}
