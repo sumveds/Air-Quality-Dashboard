@@ -8,6 +8,7 @@ type PlaceSearchProps = {
 
 const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [fetchEnabled, setFetchEnabled] = useState(true);
   const [suggestions, setSuggestions] = useState<
     {
       text: string;
@@ -16,7 +17,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
     }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState(-1); // Tracks the currently focused suggestion
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const fetchSuggestions = async (query: string) => {
     if (!query.trim()) {
@@ -27,7 +28,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
     try {
       const results = await GeoService.searchPlace(query);
       setSuggestions(results);
-      setFocusedIndex(-1); // Reset focused index when new suggestions load
+      setFocusedIndex(-1);
     } catch (error) {
       console.error(error);
     } finally {
@@ -36,11 +37,13 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
   };
 
   useEffect(() => {
-    const debounceTimeout = setTimeout(() => {
-      fetchSuggestions(searchQuery);
-    }, 300); // Debounce API calls
-    return () => clearTimeout(debounceTimeout);
-  }, [searchQuery]);
+    if (fetchEnabled) {
+      const debounceTimeout = setTimeout(() => {
+        fetchSuggestions(searchQuery);
+      }, 300); // Debounce API calls
+      return () => clearTimeout(debounceTimeout);
+    }
+  }, [searchQuery, fetchEnabled]);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (suggestions.length === 0) return;
@@ -49,21 +52,23 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
       setFocusedIndex((prev) => (prev + 1) % suggestions.length);
       event.preventDefault(); // Prevent cursor from moving in input
     } else if (event.key === "ArrowUp") {
-      setFocusedIndex((prev) =>
-        prev === -1
+      setFocusedIndex((prev) => {
+        return prev === -1
           ? suggestions.length - 1
-          : (prev - 1 + suggestions.length) % suggestions.length,
-      );
+          : (prev - 1 + suggestions.length) % suggestions.length;
+      });
       event.preventDefault();
     } else if (event.key === "Enter" && focusedIndex >= 0) {
+      event.preventDefault(); // Prevent form submission
       const selectedSuggestion = suggestions[focusedIndex];
-      setSearchQuery(selectedSuggestion.text);
+      setSearchQuery(selectedSuggestion.place_name);
       setSuggestions([]);
+      setFetchEnabled(false);
+
       onSearch(
         selectedSuggestion.coordinates.lat,
         selectedSuggestion.coordinates.lon,
       );
-      event.preventDefault(); // Prevent form submission
     }
   };
 
@@ -72,7 +77,10 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
       <input
         type="text"
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setFetchEnabled(true);
+        }}
         placeholder="Search location..."
         className={`p-2 border rounded-lg mr-2 ${
           isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
@@ -87,12 +95,12 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
           {suggestions.map((suggestion, index) => (
             <li
               key={index}
-              className={`p-2 cursor-pointer ${
-                focusedIndex === index ? "bg-gray-100" : ""
-              }`}
+              className={`p-2 cursor-pointer ${focusedIndex === index ? "bg-gray-100" : ""}`}
+              onMouseEnter={() => setFocusedIndex(index)}
               onClick={() => {
-                setSearchQuery(suggestion.text);
+                setSearchQuery(suggestion.place_name);
                 setSuggestions([]);
+                setFetchEnabled(false);
                 onSearch(
                   suggestion.coordinates.lat,
                   suggestion.coordinates.lon,
