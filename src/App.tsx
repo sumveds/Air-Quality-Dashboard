@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
-import { TSelectedStation } from "./types";
+import { TSelectedStation, TStationCoordinates } from "./types";
 import MapContainer from "./components/Map/MapContainer";
 import AirQualityService from "./services/airQualityService";
 
@@ -11,6 +11,8 @@ function App() {
   const [activePollutant, setActivePollutant] = useState<string>("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [mapCoordinates, setMapCoordinates] =
+    useState<TStationCoordinates | null>(null);
 
   const hasFetchedData = useRef(false);
 
@@ -33,6 +35,13 @@ function App() {
       }
       return prevVisible; // Keep the current state
     });
+  };
+
+  const handleSearch = (lat: number, lon: number) => {
+    // Update map center to the searched location
+    setMapCoordinates({ lat, lon });
+    console.log(`Navigating map to Latitude ${lat}, Longitude ${lon}`);
+    // Optionally fetch air quality data or other details for the searched location
   };
 
   // Automatically hide sidebar when screen width is small
@@ -71,6 +80,7 @@ function App() {
             );
             console.log("Air quality:", data.data);
             setSelectedStationInfo(data.data);
+            setMapCoordinates({ lat: latitude, lon: longitude });
           },
           async () => {
             const fallbackData = await AirQualityService.getAirQualityByCoords(
@@ -79,6 +89,7 @@ function App() {
             );
             console.log("Air quality of default location:", fallbackData.data);
             setSelectedStationInfo(fallbackData.data);
+            setMapCoordinates({ lat: 12.9716, lon: 77.5946 });
           },
         );
       } catch (error) {
@@ -99,10 +110,9 @@ function App() {
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}
         toggleSidebar={toggleSidebar}
+        onSearch={handleSearch} // Pass the updated handler
       />
-
       <div className="flex-1 grid grid-cols-12 overflow-hidden">
-        {/* Sidebar */}
         <div
           className={`transform transition-transform duration-300 overflow-hidden ${
             isSidebarVisible
@@ -119,7 +129,6 @@ function App() {
             toggleSidebar={toggleSidebar}
           />
         </div>
-        {/* Map */}
         <div
           className={`transition-all duration-300 ${
             isSidebarVisible ? "col-span-8" : "col-span-12"
@@ -129,6 +138,7 @@ function App() {
             isDarkMode={isDarkMode}
             setSelectedStationInfo={setSelectedStationInfo}
             isSidebarVisible={isSidebarVisible}
+            location={mapCoordinates}
           />
         </div>
       </div>

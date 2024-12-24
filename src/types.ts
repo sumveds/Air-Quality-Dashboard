@@ -34,3 +34,8 @@ export type TStation = {
     name: string;
   };
 };
+
+export type TStationCoordinates = {
+  lat: number;
+  lon: number;
+};
