@@ -24,28 +24,34 @@ function App() {
 
   const setSelectedStationInfo = (station: TSelectedStation | null) => {
     setSelectedStationInfoState(station);
-    if (window.innerWidth < 768 && !isSidebarVisible) {
-      toggleSidebar();
-    }
+
+    setIsSidebarVisible((prevVisible) => {
+      const shouldToggleSidebar = window.innerWidth < 768 && !prevVisible;
+      if (shouldToggleSidebar) {
+        console.log("Opening sidebar on small screen");
+        return true;
+      }
+      return prevVisible; // Keep the current state
+    });
   };
 
   // Automatically hide sidebar when screen width is small
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsSidebarVisible(false); // Hide sidebar on small screens
-      } else {
-        setIsSidebarVisible(true); // Show sidebar on larger screens
-      }
+      const isSmallScreen = window.innerWidth < 768;
+      setIsSidebarVisible((prevVisible) => {
+        if (isSmallScreen && prevVisible) {
+          console.log("Hiding sidebar on small screen resize");
+          return false; // Hide sidebar if transitioning to small screen
+        } else if (!isSmallScreen && !prevVisible) {
+          console.log("Showing sidebar on large screen resize");
+          return true; // Show sidebar if transitioning to large screen
+        }
+        return prevVisible;
+      });
     };
 
-    // Set initial state based on current window size
-    handleResize();
-
-    // Add resize event listener
     window.addEventListener("resize", handleResize);
-
-    // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
