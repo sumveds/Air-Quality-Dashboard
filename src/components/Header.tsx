@@ -1,4 +1,5 @@
 import React from "react";
+import { FiMoon, FiSun } from "react-icons/fi";
 import PlaceSearch from "./PlaceSearch";
 
 type HeaderProps = {
@@ -31,8 +32,12 @@ const Header: React.FC<HeaderProps> = ({
         {/* Ensures the PlaceSearch has space to grow */}
         <PlaceSearch onSearch={onSearch} isDarkMode={isDarkMode} />
       </div>
-      <button onClick={toggleTheme}>
-        {isDarkMode ? "Light Mode" : "Dark Mode"}
+      <button onClick={toggleTheme} className="text-2xl">
+        {isDarkMode ? (
+          <FiSun title="Switch to Light Mode" />
+        ) : (
+          <FiMoon title="Switch to Dark Mode" />
+        )}
       </button>
     </header>
   );
