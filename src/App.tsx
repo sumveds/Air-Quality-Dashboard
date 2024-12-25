@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import ReactJoyride, { CallBackProps, STATUS, Step } from "react-joyride";
 import Header from "./components/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { TSelectedStation, TStationCoordinates } from "./types";
@@ -6,6 +7,7 @@ import MapContainer from "./components/Map/MapContainer";
 import AirQualityService from "./services/airQualityService";
 
 function App() {
+  const [isTourOpen, setIsTourOpen] = useState(true);
   const [selectedStationInfo, setSelectedStationInfoState] =
     useState<TSelectedStation | null>(null);
   const [activePollutant, setActivePollutant] = useState<string>("");
@@ -15,6 +17,74 @@ function App() {
     useState<TStationCoordinates | null>(null);
 
   const hasFetchedData = useRef(false);
+
+  const tourStepsStyleOptions = isDarkMode
+    ? {
+        zIndex: 10000, // Ensure it appears above all other elements
+        arrowColor: "#fff", // Customize arrow color
+        backgroundColor: "#333", // Customize background color
+        textColor: "#fff", // Customize text color
+      }
+    : {};
+
+  const [tourSteps] = useState<Step[]>([
+    {
+      target: ".place-search",
+      content:
+        "Use this search bar to find specific locations on the map quickly and efficiently.",
+      placement: "bottom",
+      styles: {
+        options: tourStepsStyleOptions,
+      },
+    },
+    {
+      target: ".toggle-theme",
+      content:
+        "Switch between light and dark modes by clicking this icon, personalizing the look of the application to your preference.",
+      placement: "bottom",
+      styles: {
+        options: tourStepsStyleOptions,
+      },
+    },
+    {
+      target: ".aqi-info",
+      content:
+        "Monitor the Air Quality Index (AQI) and pollutant levels for the currently selected station here.",
+      placement: "top",
+      styles: {
+        options: tourStepsStyleOptions,
+      },
+    },
+    {
+      target: ".forecast-chart",
+      content:
+        "Explore the forecast of various pollutant levels for the selected station.\n" +
+        "Click on a pollutant to view its detailed forecast.",
+      placement: "top",
+      styles: {
+        options: tourStepsStyleOptions,
+      },
+    },
+    {
+      target: ".map-container",
+      content:
+        "Navigate the map to explore clustered and unclustered climate stations.\n" +
+        "Click on a station to view its AQI details in the side panel.",
+      placement: "bottom",
+      disableBeacon: true, // Skip the beacon for this step
+      styles: {
+        options: tourStepsStyleOptions,
+      },
+    },
+  ]);
+
+  const handleTourCallback = (data: CallBackProps) => {
+    const { status } = data;
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
+      setIsTourOpen(false); // Close tour when finished or skipped
+      localStorage.setItem("hasSeenTour", "true");
+    }
+  };
 
   const toggleTheme = () => {
     setIsDarkMode((prevMode) => !prevMode);
@@ -43,6 +113,13 @@ function App() {
     console.log(`Navigating map to Latitude ${lat}, Longitude ${lon}`);
     // Optionally fetch air quality data or other details for the searched location
   };
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("hasSeenTour");
+    if (hasSeenTour) {
+      setIsTourOpen(false);
+    }
+  }, []);
 
   // Automatically hide sidebar when screen width is small
   useEffect(() => {
@@ -106,6 +183,14 @@ function App() {
         isDarkMode ? "bg-black text-white" : "bg-white text-black"
       }`}
     >
+      <ReactJoyride
+        steps={tourSteps}
+        continuous
+        showSkipButton
+        showProgress
+        callback={handleTourCallback}
+        run={isTourOpen}
+      />
       <Header
         isDarkMode={isDarkMode}
         toggleTheme={toggleTheme}

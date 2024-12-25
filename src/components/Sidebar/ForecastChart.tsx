@@ -73,7 +73,7 @@ const ForecastChart: React.FC<ForecastChartProps> = ({
 
   return (
     <div
-      className={`p-4 flex flex-col gap-y-4 transition-colors duration-300 ${
+      className={`forecast-chart p-4 flex flex-col gap-y-4 transition-colors duration-300 ${
         isDarkMode ? "bg-black text-white" : "bg-white text-black"
       }`}
     >
