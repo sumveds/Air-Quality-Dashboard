@@ -82,7 +82,7 @@ const useTour = (
       target: ".forecast-chart",
       content:
         "Explore the forecast of various pollutant levels for the selected station.\nClick on a pollutant to view its detailed forecast.",
-      placement: "top",
+      placement: "bottom",
       styles: {
         options: tourStepsStyleOptions,
       },
