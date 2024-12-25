@@ -7,7 +7,7 @@ import MapContainer from "./components/Map/MapContainer";
 import AirQualityService from "./services/airQualityService";
 
 function App() {
-  const [isTourOpen, setIsTourOpen] = useState(true);
+  const [isTourOpen, setIsTourOpen] = useState(false);
   const [selectedStationInfo, setSelectedStationInfoState] =
     useState<TSelectedStation | null>(null);
   const [activePollutant, setActivePollutant] = useState<string>("");
@@ -116,8 +116,9 @@ function App() {
 
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("hasSeenTour");
-    if (hasSeenTour) {
-      setIsTourOpen(false);
+    const isSmallScreen = window.innerWidth < 768;
+    if (!hasSeenTour && !isSmallScreen) {
+      setIsTourOpen(true);
     }
   }, []);
 
