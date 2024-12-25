@@ -15,10 +15,9 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [mapCoordinates, setMapCoordinates] =
     useState<TStationCoordinates | null>(null);
+  const [isSidebarLoaded, setIsSidebarLoaded] = useState(false);
 
   const hasFetchedData = useRef(false);
-
-  const { isTourOpen, tourSteps, handleTourCallback } = useTour(isDarkMode);
 
   const toggleTheme = () => {
     setIsDarkMode((prevMode) => !prevMode);
@@ -27,6 +26,13 @@ function App() {
   const toggleSidebar = () => {
     setIsSidebarVisible((prevVisible) => !prevVisible);
   };
+
+  const { isTourOpen, tourSteps, handleTourCallback } = useTour(
+    isDarkMode,
+    isSidebarLoaded,
+    toggleSidebar,
+    isSidebarVisible,
+  );
 
   const setSelectedStationInfo = (station: TSelectedStation | null) => {
     setSelectedStationInfoState(station);
@@ -128,6 +134,7 @@ function App() {
             isDarkMode={isDarkMode}
             isVisible={isSidebarVisible}
             toggleSidebar={toggleSidebar}
+            onLoad={() => setIsSidebarLoaded(true)}
           />
         </div>
         <div

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { TSelectedStation } from "../../types";
 import AirQualityInfo from "./AirQualityInfo";
 import ForecastChart from "./ForecastChart";
@@ -10,6 +10,7 @@ type SidebarProps = {
   isDarkMode: boolean;
   isVisible: boolean;
   toggleSidebar: () => void;
+  onLoad: () => void;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -19,7 +20,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   isDarkMode,
   isVisible,
   toggleSidebar,
+  onLoad,
 }) => {
+  useEffect(() => {
+    if (selectedStationInfo) {
+      onLoad(); // Notify App when Sidebar is loaded
+    }
+  }, [selectedStationInfo]);
+
   const panelContent = useMemo(() => {
     if (!selectedStationInfo) return null;
 
@@ -47,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     >
       {/* Close Button for Mobile */}
       <button
-        className="md:hidden absolute top-4 right-4 text-white text-[2.0rem]"
+        className="close-sidebar md:hidden absolute top-4 right-4 text-white text-[2.0rem]"
         onClick={toggleSidebar}
       >
         ✕
