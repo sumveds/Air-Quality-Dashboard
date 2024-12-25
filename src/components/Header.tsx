@@ -27,7 +27,9 @@ const Header: React.FC<HeaderProps> = ({
       >
         ☰
       </button>
-      <h1 className="text-lg font-bold hidden md:block">Air Quality App</h1>
+      <h1 className="text-lg font-bold hidden md:block">
+        Air Quality Monitoring Dashboard
+      </h1>
       <div className="flex-1 max-w-[500px] mx-4">
         {/* Ensures the PlaceSearch has space to grow */}
         <PlaceSearch onSearch={onSearch} isDarkMode={isDarkMode} />
