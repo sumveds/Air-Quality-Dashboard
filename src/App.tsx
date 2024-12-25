@@ -115,10 +115,8 @@ function App() {
       <div className="flex-1 grid grid-cols-12 overflow-hidden">
         <div
           className={`transform transition-transform duration-300 overflow-hidden ${
-            isSidebarVisible
-              ? "w-full col-span-12 fixed inset-0 z-50 bg-[#383841] text-white md:relative md:w-auto md:col-span-4"
-              : "hidden"
-          }`}
+            isSidebarVisible ? "sidebar-open" : "sidebar-closed"
+          } col-span-12 fixed inset-0 z-50 bg-[#383841] text-white md:relative md:col-span-4`}
         >
           <Sidebar
             selectedStationInfo={selectedStationInfo}
@@ -131,7 +129,7 @@ function App() {
         </div>
         <div
           className={`transition-all duration-300 ${
-            isSidebarVisible ? "col-span-8" : "col-span-12"
+            isSidebarVisible ? "md:col-span-8 col-span-12" : "col-span-12"
           }`}
         >
           <MapContainer

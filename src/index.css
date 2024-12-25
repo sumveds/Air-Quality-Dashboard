@@ -38,3 +38,23 @@ body {
     width: 500px; /* Larger fixed width on large desktops */
   }
 }
+
+/* Additional transition styles for better control */
+.sidebar-open {
+  transform: translateX(0); /* Slide in */
+}
+
+.sidebar-closed {
+  transform: translateX(-100%); /* Slide out */
+}
+
+@media (min-width: 768px) {
+  .sidebar-open,
+  .sidebar-closed {
+    transform: none; /* No animation on larger devices */
+  }
+}
+
+.transition-transform {
+  transition: transform 0.4s ease-in-out;
+}
