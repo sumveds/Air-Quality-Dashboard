@@ -50,7 +50,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
   }));
 
   return (
-    <div className="w-full">
+    <div className="place-search w-full">
       <Select
         options={options}
         onInputChange={(inputValue) => {

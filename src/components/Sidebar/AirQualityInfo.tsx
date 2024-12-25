@@ -20,13 +20,10 @@ const AirQualityInfo: React.FC<AirQualityInfoProps> = ({
   const { text, color, message } = useAirQuality(selectedStationInfo.aqi);
 
   return (
-    <>
+    <div className="aqi-info">
       <div
         className={`p-6 flex flex-col gap-y-3 ${backgroundColors[color]} text-black`}
       >
-        {/* <a href={selectedStationInfo.city.url} target="_blank" rel="noreferrer">
-          <p className="text-base">{selectedStationInfo.city.name}</p>
-        </a> */}
         <p className="text-base">{selectedStationInfo.city.name}</p>
         <p className="text-3xl">{text}</p>
         <p className="text-3xl">
@@ -122,7 +119,7 @@ const AirQualityInfo: React.FC<AirQualityInfoProps> = ({
           )}
         </ul>
       </div>
-    </>
+    </div>
   );
 };
 

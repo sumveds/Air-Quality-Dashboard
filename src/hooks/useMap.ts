@@ -54,7 +54,6 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
 
         // Create the map only if we have a container and no map yet
         if (mapContainerRef.current) {
-          console.log("Initializing map...");
           const newMap = new maplibregl.Map({
             container: mapContainerRef.current, // the <div> from useRef
             style:

@@ -36,7 +36,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
       });
 
       // Add a marker at the new location
-      new maplibregl.Marker({ color: "red" })
+      new maplibregl.Marker({ color: "green" })
         .setLngLat([location.lon, location.lat])
         .addTo(map);
 
@@ -56,7 +56,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
     setSelectedStationInfo(nearestStationInfo.data);
   };
 
-  return <div ref={mapContainerRef} className="col-span-6 w-full h-[95dvh]" />;
+  return (
+    <div
+      ref={mapContainerRef}
+      className="map-container col-span-6 w-full h-[95dvh]"
+    />
+  );
 };
 
 export default MapContainer;
