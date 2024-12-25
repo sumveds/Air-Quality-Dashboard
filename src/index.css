@@ -1,8 +1,9 @@
-/* The styling file. We will be importing tailwindcss.com styles here, so we can use it across the application. We can also add our custom CSS classes here. */
+/* Tailwind CSS base, components, and utilities import */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Global styles for the application */
 html,
 body {
   height: 100%;
@@ -12,43 +13,20 @@ body {
 .transition-colors {
   transition:
     background-color 0.3s,
-    color 0.3s;
+    color 0.3s; /* Smooth transitions for theme changes */
 }
 
-/* place-search.css */
+/* Sidebar animations */
+.sidebar-open {
+  transform: translateX(0); /* Slide in for smaller devices */
+}
 
-.inputField {
-  width: 100%; /* Full width on smaller devices */
-  padding: 8px;
-  margin-right: 2px;
-  border-radius: 4px;
-  border: 1px solid #ccc; /* Adjust the border color as needed */
+.sidebar-closed {
+  transform: translateX(-100%); /* Slide out for smaller devices */
 }
 
 @media (min-width: 768px) {
   /* Tablets and above */
-  .inputField {
-    width: 300px; /* Fixed width on larger devices */
-  }
-}
-
-@media (min-width: 1024px) {
-  /* Desktops and above */
-  .inputField {
-    width: 500px; /* Larger fixed width on large desktops */
-  }
-}
-
-/* Additional transition styles for better control */
-.sidebar-open {
-  transform: translateX(0); /* Slide in */
-}
-
-.sidebar-closed {
-  transform: translateX(-100%); /* Slide out */
-}
-
-@media (min-width: 768px) {
   .sidebar-open,
   .sidebar-closed {
     transform: none; /* No animation on larger devices */
@@ -56,5 +34,5 @@ body {
 }
 
 .transition-transform {
-  transition: transform 0.4s ease-in-out;
+  transition: transform 0.4s ease-in-out; /* Smooth transitions for sidebar */
 }

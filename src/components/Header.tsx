@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header
-      className={`p-4 flex items-center justify-between ${
+      className={`p-4 flex items-center justify-between w-full ${
         isDarkMode ? "bg-gray-800 text-white" : "bg-gray-200 text-black"
       }`}
     >
@@ -27,7 +27,10 @@ const Header: React.FC<HeaderProps> = ({
         ☰
       </button>
       <h1 className="text-lg font-bold hidden md:block">Air Quality App</h1>
-      <PlaceSearch onSearch={onSearch} isDarkMode={isDarkMode} />
+      <div className="flex-1 max-w-[500px] mx-4">
+        {/* Ensures the PlaceSearch has space to grow */}
+        <PlaceSearch onSearch={onSearch} isDarkMode={isDarkMode} />
+      </div>
       <button onClick={toggleTheme}>
         {isDarkMode ? "Light Mode" : "Dark Mode"}
       </button>
