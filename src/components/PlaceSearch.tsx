@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import GeoService from "../services/geoService";
-// import "../path/to/place-search.css";
 
 type PlaceSearchProps = {
   onSearch: (lat: number, lon: number) => void;
@@ -74,7 +73,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       <input
         type="text"
         value={searchQuery}
@@ -86,6 +85,15 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
         className={`inputField ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}
         onKeyDown={handleKeyDown}
       />
+      {searchQuery && (
+        <button
+          onClick={() => setSearchQuery("")}
+          className="absolute right-2 p-1 bg-transparent hover:text-gray-500"
+          aria-label="Clear search"
+        >
+          ✕
+        </button>
+      )}
       {isLoading && (
         <div className="absolute top-full mt-2 text-sm">Loading...</div>
       )}
