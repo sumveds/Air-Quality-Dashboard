@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { TSelectedStation } from "../../types";
 import AirQualityInfo from "./AirQualityInfo";
 import ForecastChart from "./ForecastChart";
+import { HashLoader } from "react-spinners";
 
 type SidebarProps = {
   selectedStationInfo: TSelectedStation | null;
@@ -53,7 +54,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         isVisible ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:col-span-4`}
     >
-      {/* Close Button for Mobile */}
       <button
         className="close-sidebar md:hidden absolute top-4 right-4 text-white text-[2.0rem]"
         onClick={toggleSidebar}
@@ -63,7 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {panelContent || (
         <div className="flex items-center justify-center h-full">
-          <p>No station selected yet.</p>
+          <HashLoader color="green" size={60} />
         </div>
       )}
     </div>
