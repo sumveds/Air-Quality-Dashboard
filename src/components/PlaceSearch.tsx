@@ -18,6 +18,10 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
     }[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<{
+    label: string;
+    value: { lat: number; lon: number };
+  } | null>(null);
 
   const fetchSuggestions = async (query: string) => {
     if (!query.trim()) {
@@ -53,17 +57,21 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
     <div className="place-search w-full">
       <Select
         options={options}
-        onInputChange={(inputValue) => {
-          setSearchQuery(inputValue);
-          setFetchEnabled(true);
-        }}
-        onChange={(selectedOption) => {
-          if (selectedOption) {
-            const { lat, lon } = selectedOption.value;
-            setSearchQuery(selectedOption.label);
-            onSearch(lat, lon);
+        onInputChange={(inputValue, action) => {
+          if (action.action === "input-change") {
+            setSearchQuery(inputValue);
+            setFetchEnabled(true);
           }
         }}
+        onChange={(option) => {
+          if (option) {
+            const { lat, lon } = option.value;
+            setSelectedOption(null); // Clear the selected option
+            setSearchQuery(""); // Clear the input field
+            onSearch(lat, lon); // Trigger the search callback
+          }
+        }}
+        value={selectedOption} // Controlled value for the select
         placeholder="Search location..."
         isLoading={isLoading}
         isClearable
@@ -74,8 +82,8 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
             backgroundColor: isDarkMode ? "#1f2937" : "#ffffff",
             color: isDarkMode ? "#ffffff" : "#000000",
             borderColor: "#ccc",
-            width: "100%", // Stretch to parent container
-            maxWidth: "100%", // Respect parent's width
+            width: "100%",
+            maxWidth: "100%",
           }),
           menu: (provided) => ({
             ...provided,
@@ -87,7 +95,7 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
             color: isDarkMode ? "#ffffff" : "#000000",
           }),
         }}
-        className="w-full" // Tailwind for fallback responsiveness
+        className="w-full"
       />
     </div>
   );
