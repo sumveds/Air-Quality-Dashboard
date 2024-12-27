@@ -13,15 +13,6 @@ interface UseMapOptions {
   setSelectedStationInfo: (station: TSelectedStation | null) => void;
 }
 
-/**
- * A custom hook that handles:
- * 1) Creating the MapLibre map
- * 2) Handling geolocation (user coordinates)
- * 3) Updating the style on `isDarkMode` changes
- * 4) Populating markers on load and move
- *
- * Returns a `mapContainerRef` you can attach to a <div> and the `map` instance.
- */
 export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
@@ -30,36 +21,58 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
   >(null);
   const shouldCallApi = useRef(true); // Restrict API calls
   const currentStyleUrl = useRef<string | null>(null); // Track current style URL
+  const currentMarkerRef = useRef<maplibregl.Marker | null>(null); // Track the current marker
+  const latestLocation = useRef<[number, number] | null>(null); // Track the latest marker's location
 
+  // Handle dark mode style changes
   useEffect(() => {
     if (map) {
-      const style = isDarkMode ? "dark-style-url" : "light-style-url";
-      map.setStyle(style);
+      const styleUrl = isDarkMode
+        ? "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+        : "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json";
+
+      if (currentStyleUrl.current !== styleUrl) {
+        currentStyleUrl.current = styleUrl;
+        map.setStyle(styleUrl);
+
+        // Re-add markers when style changes
+        map.once("styledata", async () => {
+          // Re-add the marker to the latest location
+          if (currentMarkerRef.current) {
+            currentMarkerRef.current.remove();
+          }
+          if (latestLocation.current) {
+            currentMarkerRef.current = new maplibregl.Marker({ color: "green" })
+              .setLngLat(latestLocation.current)
+              .addTo(map);
+          }
+
+          // Re-populate other markers
+          await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+        });
+      }
     }
-  }, [isDarkMode]);
+  }, [isDarkMode, map, setSelectedStationInfo]);
 
-  // 1) Create the map once, on mount
+  // Initialize the map on mount
   useEffect(() => {
-    if (map) return; // Map already created
+    if (map) return;
 
-    // Check if the device has a small screen
     const isSmallDevice = window.innerWidth < 768;
     const initialZoom = isSmallDevice ? 9 : 7;
 
-    // Attempt geolocation
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
         setUserCoordinates([longitude, latitude]);
 
-        // Create the map only if we have a container and no map yet
         if (mapContainerRef.current) {
           const newMap = new maplibregl.Map({
-            container: mapContainerRef.current, // the <div> from useRef
+            container: mapContainerRef.current,
             style:
               "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             center: [longitude, latitude],
-            zoom: initialZoom, // Use the dynamic zoom level
+            zoom: initialZoom,
           });
 
           newMap.addControl(new NavigationControl());
@@ -70,12 +83,13 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
             }),
           );
 
-          // Mark user's location
-          new maplibregl.Marker({ color: "green" })
+          const initialMarker = new maplibregl.Marker({ color: "green" })
             .setLngLat([longitude, latitude])
             .addTo(newMap);
 
           setMap(newMap);
+          currentMarkerRef.current = initialMarker;
+          latestLocation.current = [longitude, latitude];
           currentStyleUrl.current =
             "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
         }
@@ -83,50 +97,24 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
       (error) => {
         console.error("Geolocation error:", error);
 
-        // Fallback: show a large portion of India if geolocation fails
         if (mapContainerRef.current) {
           const fallbackMap = new maplibregl.Map({
             container: mapContainerRef.current,
             style:
               "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-            center: [78.9629, 20.5937], // near center of India
-            zoom: isSmallDevice ? 6 : 4, // Adjust fallback zoom level
+            center: [78.9629, 20.5937], // Center of India
+            zoom: isSmallDevice ? 6 : 4,
           });
           fallbackMap.addControl(new NavigationControl());
           setMap(fallbackMap);
           currentStyleUrl.current =
-            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+            "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style.json";
         }
       },
     );
   }, [map]);
 
-  // 2) Handle `isDarkMode` style changes
-  useEffect(() => {
-    if (!map || !userCoordinates) return;
-
-    // Decide style URL
-    const styleUrl = isDarkMode
-      ? "https://tiles.basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-      : "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json";
-
-    // Only set the style if it is different from the current style
-    if (currentStyleUrl.current !== styleUrl) {
-      currentStyleUrl.current = styleUrl;
-      map.setStyle(styleUrl);
-
-      // When style finishes loading, re-add user marker and re-populate markers
-      map.once("styledata", async () => {
-        new maplibregl.Marker({ color: "green" })
-          .setLngLat(userCoordinates)
-          .addTo(map);
-
-        await populateMarkers(map, setSelectedStationInfo, isDarkMode);
-      });
-    }
-  }, [isDarkMode, map, userCoordinates, setSelectedStationInfo]);
-
-  // 3) On map load and movement, fetch or update markers with restricted calls
+  // Handle markers on map load and movement
   useEffect(() => {
     if (!map) return;
 
@@ -147,5 +135,11 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
     };
   }, [map, setSelectedStationInfo, isDarkMode]);
 
-  return { mapContainerRef, map, userCoordinates };
+  return {
+    mapContainerRef,
+    map,
+    userCoordinates,
+    currentMarkerRef,
+    latestLocation,
+  };
 }

@@ -17,7 +17,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
   location,
 }) => {
   console.log("Received location prop in MapContainer:", location);
-  const { mapContainerRef, map } = useMap({
+  const { mapContainerRef, map, currentMarkerRef } = useMap({
     isDarkMode,
     setSelectedStationInfo,
   });
@@ -35,10 +35,18 @@ const MapContainer: React.FC<MapContainerProps> = ({
         essential: true, // Ensures the animation is essential
       });
 
+      // Remove the previous marker if it exists
+      if (currentMarkerRef.current) {
+        currentMarkerRef.current.remove();
+      }
+
       // Add a marker at the new location
-      new maplibregl.Marker({ color: "green" })
+      const newMarker = new maplibregl.Marker({ color: "green" })
         .setLngLat([location.lon, location.lat])
         .addTo(map);
+
+      // Update the currentMarkerRef to point to the latest marker
+      currentMarkerRef.current = newMarker;
 
       // Fetch nearest station
       fetchNearestStationInfo(location);
