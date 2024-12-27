@@ -94,6 +94,25 @@ const PlaceSearch: React.FC<PlaceSearchProps> = ({ onSearch, isDarkMode }) => {
             ...provided,
             color: isDarkMode ? "#ffffff" : "#000000",
           }),
+          input: (provided) => ({
+            ...provided,
+            color: isDarkMode ? "#ffffff" : "#000000", // Ensures input text is visible
+          }),
+          placeholder: (provided) => ({
+            ...provided,
+            color: isDarkMode ? "#9ca3af" : "#6b7280", // Lighter color for placeholder text
+          }),
+          option: (provided, state) => ({
+            ...provided,
+            backgroundColor: state.isFocused
+              ? isDarkMode
+                ? "#374151" // Darker shade for focused item in dark mode
+                : "#f0f0f0" // Lighter shade for focused item in light mode
+              : isDarkMode
+                ? "#1f2937" // Default dark mode background
+                : "#ffffff", // Default light mode background
+            color: isDarkMode ? "#ffffff" : "#000000", // Text color for the option
+          }),
         }}
         className="w-full"
       />
