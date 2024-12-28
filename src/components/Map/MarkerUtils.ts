@@ -16,7 +16,7 @@ import { addClusterLayer, addUnclusteredLayer } from "./MapLayer";
 export const populateMarkers = throttle(
   async (
     map: maplibregl.Map,
-    setSelectedStationInfo: (station: TSelectedStation) => void,
+    setSelectedStationInfo: (station: TSelectedStation | null) => void,
     isDarkMode: boolean,
     setIsLoading: (loading: boolean) => void, // Pass state to control spinner visibility
   ) => {
@@ -87,6 +87,7 @@ export const populateMarkers = throttle(
 
         // Add click event for unclustered points
         map.on("click", "unclustered-point", async (e: any) => {
+          setSelectedStationInfo(null);
           const coordinates = e.features[0].geometry.coordinates.slice();
           const { stationName, uid } = e.features[0].properties;
 
