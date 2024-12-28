@@ -87,7 +87,8 @@ export const populateMarkers = throttle(
 
         // Add click event for unclustered points
         map.on("click", "unclustered-point", async (e: any) => {
-          setSelectedStationInfo(null);
+          // setSelectedStationInfo(null);
+          setIsLoading(true);
           const coordinates = e.features[0].geometry.coordinates.slice();
           const { stationName, uid } = e.features[0].properties;
 
@@ -107,6 +108,8 @@ export const populateMarkers = throttle(
             }
           } catch (error) {
             console.error("Error fetching station data:", error);
+          } finally {
+            setIsLoading(false);
           }
         });
       }
