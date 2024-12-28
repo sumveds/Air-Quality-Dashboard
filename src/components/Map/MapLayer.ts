@@ -26,6 +26,8 @@ export function addClusterLayer(map: maplibregl.Map, isDarkMode: boolean) {
         isDarkMode ? "#DC143C" : "#C62828", // Very Unhealthy
         300,
         isDarkMode ? "#FF0000" : "#B71C1C", // Hazardous
+        500,
+        "#8B0000", // For AQI >= 500 (Extremely Hazardous)
       ],
       "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
       "circle-stroke-width": 2,
@@ -59,7 +61,9 @@ export function addUnclusteredLayer(map: maplibregl.Map, isDarkMode: boolean) {
         200,
         isDarkMode ? "#DC143C" : "#C62828", // 200 <= AQI < 300
         300,
-        isDarkMode ? "#FF0000" : "#B71C1C", // Adjusted for theme
+        isDarkMode ? "#FF0000" : "#B71C1C", // 300 <= AQI < 500 (Hazardous)
+        500,
+        "#8B0000", // For AQI >= 500 (Extremely Hazardous)
       ],
       "circle-radius": 10,
       "circle-stroke-width": 3,
