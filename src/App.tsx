@@ -25,7 +25,8 @@ function App() {
   };
 
   const toggleSidebar = () => {
-    setIsSidebarVisible((prevVisible) => !prevVisible);
+    // setIsSidebarVisible((prevVisible) => !prevVisible);
+    setIsSidebarVisible(!isSidebarVisible);
   };
 
   const { isTourOpen, tourSteps, handleTourCallback } = useTour(
