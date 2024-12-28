@@ -11,9 +11,14 @@ import { populateMarkers } from "../components/Map/MarkerUtils";
 interface UseMapOptions {
   isDarkMode: boolean;
   setSelectedStationInfo: (station: TSelectedStation | null) => void;
+  setIsLoading: (loading: boolean) => void; // Add setIsLoading here
 }
 
-export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
+export function useMap({
+  isDarkMode,
+  setSelectedStationInfo,
+  setIsLoading,
+}: UseMapOptions) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [userCoordinates, setUserCoordinates] = useState<
@@ -37,7 +42,6 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
 
         // Re-add markers when style changes
         map.once("styledata", async () => {
-          // Re-add the marker to the latest location
           if (currentMarkerRef.current) {
             currentMarkerRef.current.remove();
           }
@@ -47,12 +51,16 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
               .addTo(map);
           }
 
-          // Re-populate other markers
-          await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+          await populateMarkers(
+            map,
+            setSelectedStationInfo,
+            isDarkMode,
+            setIsLoading,
+          );
         });
       }
     }
-  }, [isDarkMode, map, setSelectedStationInfo]);
+  }, [isDarkMode, map, setSelectedStationInfo, setIsLoading]);
 
   // Initialize the map on mount
   useEffect(() => {
@@ -122,7 +130,12 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
       if (shouldCallApi.current) {
         shouldCallApi.current = false; // Prevent additional calls
         setTimeout(() => (shouldCallApi.current = true), 2000); // Reset after 2 seconds
-        await populateMarkers(map, setSelectedStationInfo, isDarkMode);
+        await populateMarkers(
+          map,
+          setSelectedStationInfo,
+          isDarkMode,
+          setIsLoading,
+        );
       }
     };
 
@@ -133,7 +146,7 @@ export function useMap({ isDarkMode, setSelectedStationInfo }: UseMapOptions) {
       map.off("load", handleMapBoundsChange);
       map.off("moveend", handleMapBoundsChange);
     };
-  }, [map, setSelectedStationInfo, isDarkMode]);
+  }, [map, setSelectedStationInfo, isDarkMode, setIsLoading]);
 
   return {
     mapContainerRef,

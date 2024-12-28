@@ -12,25 +12,33 @@ import { addClusterLayer, addUnclusteredLayer } from "./MapLayer";
  * @param setSelectedStationInfo The callback function to update the state with the clicked/selected station.
  * @param isDarkMode Whether dark mode is active (for coloring the layers)
  */
+
 export const populateMarkers = throttle(
   async (
     map: maplibregl.Map,
     setSelectedStationInfo: (station: TSelectedStation) => void,
     isDarkMode: boolean,
+    setIsLoading: (loading: boolean) => void, // Pass state to control spinner visibility
   ) => {
-    const mapBounds = map.getBounds();
-
-    const zoomLevel = map.getZoom();
-    const factor = zoomLevel < 10 ? 1 : 0.1;
-
-    // Grab extended bounding box
-    const latNorth = mapBounds.getNorth() + factor;
-    const lngWest = mapBounds.getWest() - factor;
-    const latSouth = mapBounds.getSouth() - factor;
-    const lngEast = mapBounds.getEast() + factor;
-
+    setIsLoading(true); // Start showing spinner
     try {
-      // 1) Use your service method to fetch station data within bounds
+      const zoomLevel = map.getZoom();
+
+      // Skip fetching data if zoom level is too low
+      if (zoomLevel < 5) {
+        setIsLoading(false);
+        return;
+      }
+
+      const mapBounds = map.getBounds();
+
+      // Define bounds with a small buffer to fetch extra data around the edges
+      const latNorth = mapBounds.getNorth() + 0.1;
+      const lngWest = mapBounds.getWest() - 0.1;
+      const latSouth = mapBounds.getSouth() - 0.1;
+      const lngEast = mapBounds.getEast() + 0.1;
+
+      // Fetch station data within bounds
       const stations = await GeoService.getStationsWithinBounds(
         latNorth,
         lngWest,
@@ -38,36 +46,38 @@ export const populateMarkers = throttle(
         lngEast,
       );
 
-      if (stations.status !== "ok") {
-        throw stations.data || new Error("Failed to fetch station data");
+      if (stations.status !== "ok" || !stations.data) {
+        console.error("Failed to fetch station data");
+        setIsLoading(false);
+        return;
       }
 
-      // 2) Convert station data to GeoJSON
+      // Convert station data to GeoJSON
       const geoJSON = await stationsToGeoJSON(stations.data);
 
-      // 3) Check if we already have a "stations" source
+      // Check if the source already exists
       if (map.getSource("stations")) {
-        // Only update the data of the existing source
+        // Update the existing source's data
         const source = map.getSource("stations") as maplibregl.GeoJSONSource;
         source.setData(geoJSON);
       } else {
-        // 4) Add the source only if it doesn't exist
+        // Add a new GeoJSON source with clustering enabled
         map.addSource("stations", {
           type: "geojson",
           data: geoJSON,
           cluster: true,
-          clusterMaxZoom: 14,
-          clusterRadius: 50,
+          clusterMaxZoom: 14, // Maximum zoom level for clusters
+          clusterRadius: 50, // Cluster radius in pixels
           clusterProperties: {
-            avg_aqi: ["+", ["get", "aqi"]], // Summation for cluster
+            avg_aqi: ["+", ["get", "aqi"]], // Sum up AQI values for clusters
           },
         });
 
-        // 5) Add the cluster and unclustered-point layers
+        // Add cluster and unclustered-point layers
         addClusterLayer(map, isDarkMode);
         addUnclusteredLayer(map, isDarkMode);
 
-        // 6) Add hover effect to change the cursor
+        // Add hover effect for unclustered points
         map.on("mouseenter", "unclustered-point", () => {
           map.getCanvas().style.cursor = "pointer";
         });
@@ -75,17 +85,18 @@ export const populateMarkers = throttle(
           map.getCanvas().style.cursor = "";
         });
 
-        // 7) Add click event listener for unclustered-point
+        // Add click event for unclustered points
         map.on("click", "unclustered-point", async (e: any) => {
           const coordinates = e.features[0].geometry.coordinates.slice();
           const { stationName, uid } = e.features[0].properties;
 
-          // Show popup for station
+          // Show popup for the selected station
           new maplibregl.Popup()
             .setLngLat(coordinates)
             .setHTML(`<strong style="color:black;">${stationName}</strong>`)
             .addTo(map);
 
+          // Fetch and update station details
           try {
             const stationInfo = await AirQualityService.getAirQuality(uid);
             if (stationInfo && stationInfo.data) {
@@ -99,9 +110,11 @@ export const populateMarkers = throttle(
         });
       }
     } catch (error) {
-      console.error("Error fetching station data:", error);
+      console.error("Error in populateMarkers:", error);
+    } finally {
+      setIsLoading(false); // Stop showing spinner
     }
   },
-  2000, // Throttle interval in milliseconds
-  { leading: true, trailing: true }, // Optional: Adjust throttle behavior
+  300, // Throttle interval in milliseconds
+  { leading: true, trailing: true },
 );
