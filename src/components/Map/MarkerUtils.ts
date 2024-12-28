@@ -21,23 +21,18 @@ export const populateMarkers = throttle(
     setIsLoading: (loading: boolean) => void, // Pass state to control spinner visibility
   ) => {
     setIsLoading(true); // Start showing spinner
+
+    const mapBounds = map.getBounds();
+
+    const zoomLevel = map.getZoom();
+    const factor = zoomLevel < 10 ? 1 : 0.1;
+
+    const latNorth = mapBounds.getNorth() + factor;
+    const lngWest = mapBounds.getWest() - factor;
+    const latSouth = mapBounds.getSouth() - factor;
+    const lngEast = mapBounds.getEast() + factor;
+
     try {
-      const zoomLevel = map.getZoom();
-
-      // Skip fetching data if zoom level is too low
-      if (zoomLevel < 5) {
-        setIsLoading(false);
-        return;
-      }
-
-      const mapBounds = map.getBounds();
-
-      // Define bounds with a small buffer to fetch extra data around the edges
-      const latNorth = mapBounds.getNorth() + 0.1;
-      const lngWest = mapBounds.getWest() - 0.1;
-      const latSouth = mapBounds.getSouth() - 0.1;
-      const lngEast = mapBounds.getEast() + 0.1;
-
       // Fetch station data within bounds
       const stations = await GeoService.getStationsWithinBounds(
         latNorth,
