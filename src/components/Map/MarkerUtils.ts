@@ -20,7 +20,7 @@ export const populateMarkers = throttle(
     isDarkMode: boolean,
     setIsLoading: (loading: boolean) => void, // Pass state to control spinner visibility
   ) => {
-    setIsLoading(true); // Start showing spinner
+    // setIsLoading(true); // Start showing spinner
 
     const mapBounds = map.getBounds();
 
@@ -110,9 +110,9 @@ export const populateMarkers = throttle(
       }
     } catch (error) {
       console.error("Error in populateMarkers:", error);
-    } finally {
+    } /* finally {
       setIsLoading(false); // Stop showing spinner
-    }
+    }*/
   },
   300, // Throttle interval in milliseconds
   { leading: true, trailing: true },
