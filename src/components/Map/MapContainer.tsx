@@ -61,7 +61,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         location.lat,
         location.lon,
       );
-    setSelectedStationInfo(nearestStationInfo.data);
+    if (nearestStationInfo) setSelectedStationInfo(nearestStationInfo.data);
   };
 
   return (
