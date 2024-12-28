@@ -16,6 +16,7 @@ function App() {
   const [mapCoordinates, setMapCoordinates] =
     useState<TStationCoordinates | null>(null);
   const [isSidebarLoaded, setIsSidebarLoaded] = useState(false);
+  const [isCurrentLocation, setIsCurrentLocation] = useState(true);
 
   const hasFetchedData = useRef(false);
 
@@ -48,6 +49,7 @@ function App() {
   };
 
   const handleSearch = (lat: number, lon: number) => {
+    setIsCurrentLocation(false);
     setMapCoordinates({ lat, lon });
     console.log(`Navigating map to Latitude ${lat}, Longitude ${lon}`);
   };
@@ -81,6 +83,7 @@ function App() {
               latitude,
               longitude,
             );
+            setIsCurrentLocation(true);
             setSelectedStationInfo(data.data);
             setMapCoordinates({ lat: latitude, lon: longitude });
           },
@@ -147,6 +150,7 @@ function App() {
             setSelectedStationInfo={setSelectedStationInfo}
             isSidebarVisible={isSidebarVisible}
             location={mapCoordinates}
+            isCurrentLocation={isCurrentLocation}
           />
         </div>
       </div>

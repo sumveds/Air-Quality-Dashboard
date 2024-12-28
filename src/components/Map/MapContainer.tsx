@@ -4,20 +4,24 @@ import maplibregl, { Map as MapLibreMap } from "maplibre-gl";
 import { TSelectedStation, TStationCoordinates } from "../../types";
 import { BarLoader } from "react-spinners";
 import AirQualityService from "../../services/airQualityService";
+import InfoDialog from "../InfoDialog";
 
 type MapContainerProps = {
   isDarkMode: boolean;
   setSelectedStationInfo: (station: TSelectedStation | null) => void;
   isSidebarVisible: boolean;
   location?: TStationCoordinates | null;
+  isCurrentLocation: boolean;
 };
 
 const MapContainer: React.FC<MapContainerProps> = ({
   isDarkMode,
   setSelectedStationInfo,
   location,
+  isCurrentLocation,
 }) => {
   const [isLoading, setIsLoading] = useState(false); // Manage loading state
+  const [dialogMessage, setDialogMessage] = useState<string | null>(null); // Dialog message state
   const { mapContainerRef, map, currentMarkerRef } = useMap({
     isDarkMode,
     setSelectedStationInfo,
@@ -65,11 +69,25 @@ const MapContainer: React.FC<MapContainerProps> = ({
           location.lat,
           location.lon,
         );
-      if (nearestStationInfo) {
+      if (nearestStationInfo && nearestStationInfo.data) {
         setSelectedStationInfo(nearestStationInfo.data);
+      } else {
+        // setSelectedStationInfo(null);
+        if (isCurrentLocation) {
+          setDialogMessage(
+            "No nearby station was found for the selected location. " +
+              "Displaying data for the default location instead.",
+          );
+        } else {
+          setDialogMessage(
+            "No nearby station was found for the selected location. " +
+              "Displaying data for the previously selected location instead.",
+          );
+        }
       }
     } catch (error) {
       console.error("Error fetching nearest station info:", error);
+      setDialogMessage("An error occurred while fetching station information.");
     } finally {
       setIsLoading(false); // Hide loading spinner after fetch
     }
@@ -81,6 +99,12 @@ const MapContainer: React.FC<MapContainerProps> = ({
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-50 z-50">
           <BarLoader color="#696969" />
         </div>
+      )}
+      {dialogMessage && (
+        <InfoDialog
+          message={dialogMessage}
+          onClose={() => setDialogMessage(null)}
+        />
       )}
       <div
         ref={mapContainerRef}
