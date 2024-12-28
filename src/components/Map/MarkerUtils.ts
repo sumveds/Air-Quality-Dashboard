@@ -43,7 +43,7 @@ export const populateMarkers = throttle(
       }
 
       // 2) Convert station data to GeoJSON
-      const geoJSON = stationsToGeoJSON(stations.data);
+      const geoJSON = await stationsToGeoJSON(stations.data);
 
       // 3) Check if we already have a "stations" source
       if (map.getSource("stations")) {
