@@ -5,6 +5,8 @@ import { TSelectedStation, TStationCoordinates } from "../../types";
 import { BarLoader } from "react-spinners";
 import AirQualityService from "../../services/airQualityService";
 import InfoDialog from "../InfoDialog";
+import { populateMarkers } from "./MarkerUtils";
+import { populateHeatmap } from "./HeatmapUtils";
 
 type MapContainerProps = {
   isDarkMode: boolean;
@@ -20,49 +22,38 @@ const MapContainer: React.FC<MapContainerProps> = ({
   location,
   isCurrentLocation,
 }) => {
-  const [isLoading, setIsLoading] = useState(false); // Manage loading state
-  const [dialogMessage, setDialogMessage] = useState<string | null>(null); // Dialog message state
+  const [isLoading, setIsLoading] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState<string | null>(null);
+  const [isHeatmapVisible, setIsHeatmapVisible] = useState(false); // Heatmap toggle state
   const { mapContainerRef, map, currentMarkerRef } = useMap({
     isDarkMode,
     setSelectedStationInfo,
-    setIsLoading, // Pass the loading state setter to the useMap hook
+    setIsLoading,
   });
 
   useEffect(() => {
-    console.log("Map useEffect triggered with location:", location);
-
     if (map instanceof MapLibreMap && location) {
-      console.log("Focusing map on location:", location);
-
-      // Fly to the location
       map.flyTo({
         center: [location.lon, location.lat],
         zoom: 8,
-        essential: true, // Ensures the animation is essential
+        essential: true,
       });
 
-      // Remove the previous marker if it exists
       if (currentMarkerRef.current) {
         currentMarkerRef.current.remove();
       }
 
-      // Add a marker at the new location
       const newMarker = new maplibregl.Marker({ color: "green" })
         .setLngLat([location.lon, location.lat])
         .addTo(map);
 
-      // Update the currentMarkerRef to point to the latest marker
       currentMarkerRef.current = newMarker;
-
-      // Fetch nearest station
       fetchNearestStationInfo(location);
-    } else if (!map) {
-      console.log("Map is not initialized yet.");
     }
   }, [map, location]);
 
   const fetchNearestStationInfo = async (location: TStationCoordinates) => {
-    setIsLoading(true); // Show loading spinner during fetch
+    setIsLoading(true);
     try {
       const nearestStationInfo =
         await AirQualityService.getAirQualityOfNearestStation(
@@ -72,29 +63,39 @@ const MapContainer: React.FC<MapContainerProps> = ({
       if (nearestStationInfo && nearestStationInfo.data) {
         setSelectedStationInfo(nearestStationInfo.data);
       } else {
-        // setSelectedStationInfo(null);
-        if (isCurrentLocation) {
-          setDialogMessage(
-            "No nearby station was found for the selected location. " +
-              "Displaying data for the default location instead.",
-          );
-        } else {
-          setDialogMessage(
-            "No nearby station was found for the selected location. " +
-              "Displaying data for the previously selected location instead.",
-          );
-        }
+        setDialogMessage(
+          isCurrentLocation
+            ? "No nearby station was found for the selected location. Displaying data for the default location instead."
+            : "No nearby station was found for the selected location. Displaying data for the previously selected location instead.",
+        );
       }
     } catch (error) {
       console.error("Error fetching nearest station info:", error);
       setDialogMessage("An error occurred while fetching station information.");
     } finally {
-      setIsLoading(false); // Hide loading spinner after fetch
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (map) {
+      populateMarkers(map, setSelectedStationInfo, isDarkMode, setIsLoading);
+      populateHeatmap(map, isHeatmapVisible); // Call the new utility function
+    }
+  }, [map, isHeatmapVisible]);
+
   return (
     <div className="relative w-full h-full">
+      <div
+        className="absolute bottom-16 right-2 z-50 p-1 rounded shadow-lg bg-white border border-gray-700 cursor-pointer flex items-center justify-center hover:shadow-xl"
+        onClick={() => setIsHeatmapVisible((prev) => !prev)}
+      >
+        <img
+          src={isHeatmapVisible ? "icons/markers.jpg" : "icons/heatmap.png"}
+          alt={isHeatmapVisible ? "Hide Heatmap" : "Show Heatmap"}
+          className="w-10 h-10"
+        />
+      </div>
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-50 z-50">
           <BarLoader color="#696969" />
