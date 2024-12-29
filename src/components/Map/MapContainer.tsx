@@ -91,7 +91,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
         onClick={() => setIsHeatmapVisible((prev) => !prev)}
       >
         <button
-          className="w-full h-full text-center font-bold"
+          className="w-full h-full flex items-center justify-center text-center font-bold overflow-hidden whitespace-nowrap text-sm md:text-base px-2"
           style={{
             backgroundColor: isHeatmapVisible ? "red" : "green",
             color: "white",
