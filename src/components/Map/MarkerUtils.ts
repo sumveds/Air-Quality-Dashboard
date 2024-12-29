@@ -88,7 +88,7 @@ export const populateMarkers = throttle(
           const { stationName, uid } = e.features[0].properties;
 
           // Show popup for the selected station
-          new maplibregl.Popup()
+          new maplibregl.Popup({ className: "custom-popup" })
             .setLngLat(coordinates)
             .setHTML(`<strong style="color:black;">${stationName}</strong>`)
             .addTo(map);

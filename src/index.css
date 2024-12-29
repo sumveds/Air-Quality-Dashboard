@@ -36,3 +36,31 @@ body {
 .transition-transform {
   transition: transform 0.4s ease-in-out; /* Smooth transitions for sidebar */
 }
+
+.custom-popup .maplibregl-popup-content {
+  position: relative; /* Ensures positioning for the close button */
+  padding: 16px 16px 16px 16px; /* Adds padding on the right for the close button */
+  border: 2px solid #4caf50; /* Green border */
+  border-radius: 8px; /* Rounded corners */
+  background-color: #ffffff; /* White background */
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Optional shadow for better visibility */
+  overflow: hidden; /* Ensures content stays within the border */
+}
+
+.custom-popup .maplibregl-popup-close-button {
+  position: absolute; /* Allows absolute positioning */
+  top: -2px; /* Moves the button closer to the top */
+  right: 2px; /* Moves the button closer to the right edge */
+  font-size: 20px; /* Sets a consistent font size */
+  background-color: transparent; /* Removes background */
+  border: none; /* Removes border */
+  cursor: pointer; /* Pointer cursor on hover */
+  color: green; /* Matches the border color of the popup */
+  z-index: 1000; /* Ensures it stays on top */
+}
+
+.custom-popup {
+  padding: 0; /* Removes any extra padding around the popup */
+  border-radius: 8px; /* Keeps rounded corners for the popup */
+  overflow: visible; /* Ensures the close button is fully visible */
+}
