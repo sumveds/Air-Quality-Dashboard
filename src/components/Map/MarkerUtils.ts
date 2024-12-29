@@ -80,6 +80,14 @@ export const populateMarkers = throttle(
           map.getCanvas().style.cursor = "";
         });
 
+        // Remove previous event listeners to avoid duplicates
+        map.off("mouseenter", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.off("mouseleave", "unclustered-point", () => {
+          map.getCanvas().style.cursor = "";
+        });
+
         // Add click event for unclustered points
         map.on("click", "unclustered-point", async (e: any) => {
           // setSelectedStationInfo(null);
@@ -88,7 +96,11 @@ export const populateMarkers = throttle(
           const { stationName, uid } = e.features[0].properties;
 
           // Show popup for the selected station
-          new maplibregl.Popup({ className: "custom-popup" })
+          new maplibregl.Popup({
+            className: "custom-popup",
+            closeOnClick: true,
+            closeOnMove: true,
+          })
             .setLngLat(coordinates)
             .setHTML(`<strong style="color:black;">${stationName}</strong>`)
             .addTo(map);

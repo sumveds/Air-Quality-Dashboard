@@ -89,7 +89,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
     <div className="w-full h-full">
       {(!isSidebarVisible || window.innerWidth > 768) && (
         <div
-          className="absolute z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl button-container"
+          className="absolute z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl heatmap-button-container"
           onClick={() => setIsHeatmapVisible((prev) => !prev)}
         >
           <button
