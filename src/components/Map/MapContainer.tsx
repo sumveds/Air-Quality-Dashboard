@@ -87,13 +87,14 @@ const MapContainer: React.FC<MapContainerProps> = ({
   return (
     <div className="relative w-full h-full">
       <div
-        className="absolute bottom-16 right-2 z-50 p-1 rounded shadow-lg bg-white border border-gray-700 cursor-pointer flex items-center justify-center hover:shadow-xl"
+        className="absolute bottom-16 right-2 z-[9999] p-2 rounded shadow-lg bg-white border border-gray-700 cursor-pointer flex items-center justify-center hover:shadow-xl"
+        style={{ width: "50px", height: "50px" }}
         onClick={() => setIsHeatmapVisible((prev) => !prev)}
       >
         <img
           src={isHeatmapVisible ? "icons/markers.jpg" : "icons/heatmap.png"}
           alt={isHeatmapVisible ? "Hide Heatmap" : "Show Heatmap"}
-          className="w-10 h-10"
+          className="w-full h-full object-contain"
         />
       </div>
       {isLoading && (
