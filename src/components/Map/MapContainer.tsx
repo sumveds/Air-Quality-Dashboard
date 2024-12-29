@@ -85,10 +85,9 @@ const MapContainer: React.FC<MapContainerProps> = ({
   }, [map, isHeatmapVisible]);
 
   return (
-    <div className="relative w-full h-full">
+    <div className="w-full h-full">
       <div
-        className="absolute bottom-10 right-2 z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl"
-        style={{ width: "50px", height: "50px" }}
+        className="absolute z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl button-container"
         onClick={() => setIsHeatmapVisible((prev) => !prev)}
       >
         <button
