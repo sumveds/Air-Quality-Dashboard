@@ -19,6 +19,7 @@ type MapContainerProps = {
 const MapContainer: React.FC<MapContainerProps> = ({
   isDarkMode,
   setSelectedStationInfo,
+  isSidebarVisible,
   location,
   isCurrentLocation,
 }) => {
@@ -86,22 +87,24 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
   return (
     <div className="w-full h-full">
-      <div
-        className="absolute z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl button-container"
-        onClick={() => setIsHeatmapVisible((prev) => !prev)}
-      >
-        <button
-          className="w-full h-full flex items-center justify-center text-center font-bold overflow-hidden whitespace-nowrap text-sm md:text-base px-2"
-          style={{
-            backgroundColor: isHeatmapVisible ? "red" : "green",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-          }}
+      {(!isSidebarVisible || window.innerWidth > 768) && (
+        <div
+          className="absolute z-[9999] rounded shadow-lg cursor-pointer flex items-center justify-center hover:shadow-xl button-container"
+          onClick={() => setIsHeatmapVisible((prev) => !prev)}
         >
-          {isHeatmapVisible ? "Hide" : "Show"}
-        </button>
-      </div>
+          <button
+            className="w-full h-full flex items-center justify-center text-center font-bold overflow-hidden whitespace-nowrap text-sm md:text-base px-2"
+            style={{
+              backgroundColor: isHeatmapVisible ? "red" : "green",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+            }}
+          >
+            {isHeatmapVisible ? "Hide" : "Show"}
+          </button>
+        </div>
+      )}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-50 z-50">
           <BarLoader color="#696969" />
