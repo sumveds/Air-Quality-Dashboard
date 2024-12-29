@@ -37,6 +37,11 @@ body {
   transition: transform 0.4s ease-in-out; /* Smooth transitions for sidebar */
 }
 
+.map-container {
+  position: relative;
+  overflow: visible; /* Ensure the container doesn't clip child elements */
+}
+
 .custom-popup .maplibregl-popup-content {
   position: relative; /* Ensures positioning for the close button */
   padding: 16px 16px 16px 16px; /* Adds padding on the right for the close button */
